@@ -1,0 +1,51 @@
+---
+description: Project conventions for the InTheMoment iOS app, shared core, and Vapor server.
+globs:
+alwaysApply: true
+---
+
+# InTheMoment — project rules
+
+InTheMoment is a native SwiftUI iOS app (artists/event companies post photos &
+videos; fans browse and download). It has three Swift parts that share models:
+
+- `Sources/InTheMomentCore/` — shared models + logic (NO UIKit/SwiftUI/Vapor). Built on Linux & Apple.
+- `App/InTheMoment/` — SwiftUI app + `AppModel` + services. Built only in Xcode on macOS.
+- `Server/` — Vapor + Fluent + SQLite backend. Reuses `InTheMomentCore`.
+
+## Must follow
+
+- **Do NOT hand-edit `InTheMoment.xcodeproj`.** It is generated from `project.yml`
+  via XcodeGen. Add/rename files on disk, then run `xcodegen generate` and commit
+  the result.
+- **`Creator` / `Event` / `MediaItem` are defined once** in `InTheMomentCore` and
+  used by both the app and the server. Never duplicate or fork them.
+- **Keep `Sources/InTheMomentCore` platform-agnostic** — no `import SwiftUI`,
+  `import UIKit`, or `import Vapor` there.
+- **Views never do networking.** Views → `AppModel` → `EventStore`. Add logic to a
+  store or `AppModel`, not to a `View`.
+- **All JSON dates are ISO-8601.** App, `APIEventStore`, and server must stay in sync.
+- **Don't commit secrets.** `JWT_SECRET` is an env var; auth tokens live in the Keychain.
+
+## Backend architecture
+
+The app depends only on the `EventStore` protocol. Implementations:
+`InMemoryEventStore` (tests/previews), `FileEventStore` (on-device), `APIEventStore`
+(REST, the default). `APIEventStore` takes an injectable `HTTPTransport`; the app
+wraps it in `AuthenticatedTransport` to attach the bearer token.
+
+## Auth
+
+Register/login return `{ token, creator }`. Read routes are public; write routes
+require `Authorization: Bearer <token>` and enforce per-creator ownership on the
+server (derived from the token, not the request body).
+
+## Verifying changes
+
+```bash
+swift build && swift test     # core — always
+cd Server && swift build      # server
+xcodegen generate             # after any App/ file change
+```
+
+The iOS app target is verified in Xcode on macOS (not in CI).
