@@ -1,0 +1,74 @@
+import SwiftUI
+import InTheMomentCore
+
+/// Creator-side dashboard: the events owned by the current creator, with the
+/// ability to create new ones. Each event is independent and holds its own media.
+struct MyEventsView: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var showingCreate = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                let mine = model.myEvents()
+                if mine.isEmpty {
+                    ContentUnavailableViewCompat(
+                        title: "No events yet",
+                        systemImage: "rectangle.stack.badge.plus",
+                        message: "Create an event page to start posting photos and videos."
+                    )
+                } else {
+                    List {
+                        ForEach(mine) { event in
+                            NavigationLink(value: event.id) {
+                                MyEventRow(event: event)
+                            }
+                        }
+                        .onDelete { offsets in
+                            let ids = offsets.map { mine[$0].id }
+                            Task { for id in ids { await model.deleteEvent(id) } }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("My Events")
+            .navigationDestination(for: UUID.self) { id in
+                if let event = model.event(id: id) {
+                    CreatorEventDetailView(event: event)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingCreate = true } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingCreate) {
+                CreateEventView()
+            }
+        }
+    }
+}
+
+private struct MyEventRow: View {
+    let event: Event
+
+    var body: some View {
+        HStack(spacing: 12) {
+            RemoteImage(url: event.displayCoverURL)
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(event.title).font(.headline)
+                Text("\(event.mediaCount) items · \(event.date.eventDayString)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+#Preview {
+    MyEventsView().environmentObject(AppModel())
+}
