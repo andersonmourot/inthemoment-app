@@ -16,3 +16,13 @@ jobs:
         run: swift build
       - name: Test
         run: swift test
+
+  server-linux:
+    name: Build InTheMomentServer (Linux)
+    runs-on: ubuntu-22.04
+    container: swift:6.0.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build server
+        run: swift build
+        working-directory: Server
