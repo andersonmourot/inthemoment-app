@@ -38,9 +38,23 @@ while the UI stays iOS-native.
 ### Swappable backend
 
 The app talks only to the [`EventStore`](Sources/InTheMomentCore/Store/EventStore.swift)
-protocol. Today it uses an in-memory implementation seeded with sample data; a real
-networked store can be dropped in later without changing any view code — just inject a
-different `EventStore` into `AppModel`.
+protocol, so the backend is a one-line injection into `AppModel` — no view changes.
+Three implementations ship today:
+
+| Store | Use |
+| --- | --- |
+| `InMemoryEventStore` | previews & tests |
+| `FileEventStore` | on-device JSON persistence (app default) |
+| `APIEventStore` | REST backend; the production path once a server exists |
+
+```swift
+AppModel(store: try FileEventStore(fileURL: url, seed: SampleData.makeState())) // default
+AppModel(store: APIEventStore(baseURL: URL(string: "https://api.inthemoment.app/v1")!))
+```
+
+`APIEventStore`'s REST/JSON contract (ISO-8601 dates) is documented at the top of
+[`APIEventStore.swift`](Sources/InTheMomentCore/Store/APIEventStore.swift); it takes an
+injectable `HTTPTransport` so it is fully unit-tested without hitting the network.
 
 ## Requirements
 
