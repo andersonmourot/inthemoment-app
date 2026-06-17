@@ -28,16 +28,9 @@ final class AppModel: ObservableObject {
         self.currentCreator = currentCreator
     }
 
-    /// On-device persistent store seeded with sample data, falling back to in-memory.
+    /// The shared backend so events and uploads are visible across all users.
     private static func makeDefaultStore() -> EventStore {
-        do {
-            let url = FileManager.default
-                .urls(for: .documentDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("store.json")
-            return try FileEventStore(fileURL: url, seed: SampleData.makeState())
-        } catch {
-            return SampleData.makeStore()
-        }
+        APIEventStore(baseURL: AppConfig.apiBaseURL)
     }
 
     func bootstrap() async {
