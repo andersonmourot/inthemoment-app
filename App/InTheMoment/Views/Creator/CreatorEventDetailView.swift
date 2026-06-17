@@ -7,6 +7,7 @@ struct CreatorEventDetailView: View {
     let event: Event
     @EnvironmentObject private var model: AppModel
     @State private var showingAdd = false
+    @State private var showingEdit = false
     @State private var selectedMedia: MediaItem?
 
     private var liveEvent: Event { model.event(id: event.id) ?? event }
@@ -35,9 +36,31 @@ struct CreatorEventDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showingAdd = true } label: { Label("Add", systemImage: "plus") }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button { showingEdit = true } label: { Label("Edit details", systemImage: "pencil") }
+                    Button {
+                        Task { await model.setPublished(!liveEvent.isPublished, for: liveEvent.id) }
+                    } label: {
+                        if liveEvent.isPublished {
+                            Label("Switch to draft", systemImage: "eye.slash")
+                        } else {
+                            Label("Publish", systemImage: "eye")
+                        }
+                    }
+                    ShareLink(item: DeepLink.event(liveEvent.id).webURL) {
+                        Label("Share link", systemImage: "square.and.arrow.up")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
         }
         .sheet(isPresented: $showingAdd) {
             AddMediaView(eventId: liveEvent.id)
+        }
+        .sheet(isPresented: $showingEdit) {
+            EditEventView(event: liveEvent)
         }
         .fullScreenCover(item: $selectedMedia) { MediaDetailView(item: $0) }
     }

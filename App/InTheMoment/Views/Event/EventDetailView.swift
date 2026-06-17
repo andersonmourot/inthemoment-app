@@ -53,6 +53,17 @@ struct EventDetailView: View {
         }
         .navigationTitle(liveEvent.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(
+                    item: DeepLink.event(liveEvent.id).webURL,
+                    subject: Text(liveEvent.title),
+                    message: Text("Photos & videos from \(liveEvent.title) on In The Moment")
+                ) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
+        }
         .fullScreenCover(item: $selectedMedia) { item in
             MediaDetailView(item: item)
         }
