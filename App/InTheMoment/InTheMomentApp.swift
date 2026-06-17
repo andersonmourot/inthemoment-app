@@ -3,12 +3,20 @@ import SwiftUI
 @main
 struct InTheMomentApp: App {
     @StateObject private var model = AppModel()
+    @StateObject private var auth = AuthService()
 
     var body: some Scene {
         WindowGroup {
             RootTabView()
                 .environmentObject(model)
-                .task { await model.bootstrap() }
+                .environmentObject(auth)
+                .task {
+                    if let creator = await auth.restore() {
+                        await model.signIn(as: creator)
+                    } else {
+                        await model.bootstrap()
+                    }
+                }
                 .tint(.appAccent)
                 .onOpenURL { url in
                     Task { await model.handle(url: url) }

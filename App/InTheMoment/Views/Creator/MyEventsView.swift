@@ -6,12 +6,27 @@ import InTheMomentCore
 struct MyEventsView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showingCreate = false
+    @State private var showingAuth = false
 
     var body: some View {
         NavigationStack {
             Group {
                 let mine = model.myEvents()
-                if mine.isEmpty {
+                if !model.isSignedIn {
+                    VStack(spacing: 16) {
+                        ContentUnavailableViewCompat(
+                            title: "Sign in to manage events",
+                            systemImage: "person.crop.circle.badge.plus",
+                            message: "Create a creator account to start posting photos and videos from your events."
+                        )
+                        Button {
+                            showingAuth = true
+                        } label: {
+                            Text("Sign In / Create Account").bold()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                } else if mine.isEmpty {
                     ContentUnavailableViewCompat(
                         title: "No events yet",
                         systemImage: "rectangle.stack.badge.plus",
@@ -38,14 +53,19 @@ struct MyEventsView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showingCreate = true } label: {
-                        Image(systemName: "plus")
+                if model.isSignedIn {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { showingCreate = true } label: {
+                            Image(systemName: "plus")
+                        }
                     }
                 }
             }
             .sheet(isPresented: $showingCreate) {
                 CreateEventView()
+            }
+            .sheet(isPresented: $showingAuth) {
+                AuthView()
             }
         }
     }
