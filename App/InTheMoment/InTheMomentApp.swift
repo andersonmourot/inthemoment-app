@@ -12,10 +12,9 @@ struct InTheMomentApp: App {
                 .environmentObject(auth)
                 .task {
                     if let creator = await auth.restore() {
-                        await model.signIn(as: creator)
-                    } else {
-                        await model.bootstrap()
+                        model.currentCreator = creator
                     }
+                    await model.bootstrap()
                 }
                 .tint(.appAccent)
                 .onOpenURL { url in

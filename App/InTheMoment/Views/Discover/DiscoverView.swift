@@ -6,8 +6,12 @@ struct DiscoverView: View {
     @EnvironmentObject private var model: AppModel
     @State private var query = ""
 
+    private enum Filter: String, CaseIterable { case all = "All", following = "Following" }
+    @State private var filter: Filter = .all
+
     private var results: [Event] {
-        EventFeed.search(model.events, query: query)
+        let base = filter == .following ? model.followedEvents : model.events
+        return EventFeed.search(base, query: query)
     }
 
     var body: some View {
@@ -21,6 +25,20 @@ struct DiscoverView: View {
                     )
                 } else {
                     List {
+                        if !model.followedCreators.isEmpty {
+                            Picker("Filter", selection: $filter) {
+                                ForEach(Filter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
+                        }
+                        if filter == .following && results.isEmpty {
+                            Text("No events from creators you follow yet.")
+                                .foregroundStyle(.secondary)
+                                .font(.subheadline)
+                                .listRowSeparator(.hidden)
+                        }
                         ForEach(results) { event in
                             NavigationLink(value: event.id) {
                                 EventRow(event: event, creator: model.creator(id: event.creatorId))
@@ -46,6 +64,7 @@ struct DiscoverView: View {
 private struct EventRow: View {
     let event: Event
     let creator: Creator?
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -53,6 +72,19 @@ private struct EventRow: View {
                 .frame(height: 180)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        Task { await model.toggleFavorite(event.id) }
+                    } label: {
+                        Image(systemName: model.isFavorite(event.id) ? "heart.fill" : "heart")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(model.isFavorite(event.id) ? .pink : .white)
+                            .padding(8)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .padding(8)
+                    }
+                    .buttonStyle(.plain)
+                }
                 .overlay(alignment: .bottomTrailing) {
                     MediaCountBadge(photos: event.photoCount, videos: event.videoCount)
                         .padding(8)

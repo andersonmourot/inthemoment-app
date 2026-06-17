@@ -6,9 +6,13 @@ struct EventDetailView: View {
     let event: Event
     @EnvironmentObject private var model: AppModel
     @State private var selectedMedia: MediaItem?
+    @State private var isDownloadingAll = false
+    @State private var downloadMessage: String?
 
     /// Always read the freshest copy from the model so newly added media appears.
     private var liveEvent: Event { model.event(id: event.id) ?? event }
+
+    private var isFavorite: Bool { model.isFavorite(liveEvent.id) }
 
     var body: some View {
         ScrollView {
@@ -21,7 +25,11 @@ struct EventDetailView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(liveEvent.title).font(.title2.bold())
                     if let creator = model.creator(id: liveEvent.creatorId) {
-                        Text(creator.displayHandle).foregroundStyle(.appAccent)
+                        HStack {
+                            Text(creator.displayHandle).foregroundStyle(.appAccent)
+                            Spacer()
+                            FollowButton(creator: creator)
+                        }
                     }
                     HStack(spacing: 12) {
                         Label(liveEvent.date.eventDayString, systemImage: "calendar")
@@ -34,6 +42,20 @@ struct EventDetailView: View {
                     if let details = liveEvent.details {
                         Text(details).font(.body).padding(.top, 4)
                     }
+                }
+
+                if liveEvent.downloadableCount > 0 {
+                    Button {
+                        downloadAll()
+                    } label: {
+                        Label(
+                            isDownloadingAll ? "Saving…" : "Download all (\(liveEvent.downloadableCount))",
+                            systemImage: "square.and.arrow.down.on.square"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isDownloadingAll)
                 }
 
                 Divider()
@@ -55,6 +77,15 @@ struct EventDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task { await model.toggleFavorite(liveEvent.id) }
+                } label: {
+                    Image(systemName: isFavorite ? "heart.fill" : "heart")
+                }
+                .tint(isFavorite ? .pink : .appAccent)
+                .accessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
+            }
+            ToolbarItem(placement: .topBarTrailing) {
                 ShareLink(
                     item: DeepLink.event(liveEvent.id).webURL,
                     subject: Text(liveEvent.title),
@@ -67,5 +98,47 @@ struct EventDetailView: View {
         .fullScreenCover(item: $selectedMedia) { item in
             MediaDetailView(item: item)
         }
+        .alert("Download", isPresented: Binding(
+            get: { downloadMessage != nil },
+            set: { if !$0 { downloadMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { downloadMessage = nil }
+        } message: {
+            Text(downloadMessage ?? "")
+        }
+    }
+
+    private func downloadAll() {
+        isDownloadingAll = true
+        Task {
+            defer { isDownloadingAll = false }
+            do {
+                let result = try await MediaDownloader.saveAllToPhotoLibrary(liveEvent.media)
+                downloadMessage = result.failed == 0
+                    ? "Saved \(result.saved) item\(result.saved == 1 ? "" : "s") to your photo library."
+                    : "Saved \(result.saved), \(result.failed) failed."
+            } catch {
+                downloadMessage = error.localizedDescription
+            }
+        }
+    }
+}
+
+/// Follow / Following toggle for a creator.
+private struct FollowButton: View {
+    let creator: Creator
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        let following = model.isFollowing(creator.id)
+        Button {
+            Task { await model.toggleFollow(creator.id) }
+        } label: {
+            Label(following ? "Following" : "Follow",
+                  systemImage: following ? "checkmark" : "plus")
+                .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.bordered)
+        .tint(following ? .secondary : .appAccent)
     }
 }
