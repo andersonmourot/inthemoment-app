@@ -4,31 +4,56 @@ import InTheMomentCore
 /// The signed-in creator's profile and a directory of other creators.
 struct ProfileView: View {
     @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var auth: AuthService
+    @State private var showingAuth = false
 
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    CreatorHeader(creator: model.currentCreator)
+                if let creator = model.currentCreator {
+                    Section {
+                        CreatorHeader(creator: creator)
+                    }
+                    Section {
+                        Button(role: .destructive) {
+                            auth.logout()
+                            Task { await model.signOut() }
+                        } label: {
+                            Text("Sign Out")
+                        }
+                    }
+                } else {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("You're browsing as a viewer")
+                                .font(.headline)
+                            Text("Sign in or create a creator account to post photos and videos from your events.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            Button {
+                                showingAuth = true
+                            } label: {
+                                Text("Sign In / Create Account").bold()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .padding(.top, 4)
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
 
-                Section("Switch acting creator") {
+                Section("Creators on InTheMoment") {
                     ForEach(model.creators) { creator in
-                        Button {
-                            Task { await model.switchCreator(to: creator) }
-                        } label: {
-                            HStack {
-                                Text(creator.displayName)
-                                if creator.isVerified {
-                                    Image(systemName: "checkmark.seal.fill").foregroundStyle(.appAccent)
-                                }
-                                Spacer()
-                                if creator.id == model.currentCreator.id {
-                                    Image(systemName: "checkmark").foregroundStyle(.appAccent)
-                                }
+                        HStack {
+                            Text(creator.displayName)
+                            if creator.isVerified {
+                                Image(systemName: "checkmark.seal.fill").foregroundStyle(.appAccent)
+                            }
+                            Spacer()
+                            if creator.id == model.currentCreator?.id {
+                                Text("You").font(.caption).foregroundStyle(.appAccent)
                             }
                         }
-                        .tint(.primary)
                     }
                 }
 
@@ -39,6 +64,9 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+            .sheet(isPresented: $showingAuth) {
+                AuthView()
+            }
         }
     }
 }
@@ -65,5 +93,7 @@ private struct CreatorHeader: View {
 }
 
 #Preview {
-    ProfileView().environmentObject(AppModel())
+    ProfileView()
+        .environmentObject(AppModel())
+        .environmentObject(AuthService())
 }

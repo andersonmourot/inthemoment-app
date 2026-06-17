@@ -1,8 +1,13 @@
 import Vapor
 import Fluent
 import FluentSQLiteDriver
+import JWT
 
 public func configure(_ app: Application) async throws {
+    // JWT signing key (set JWT_SECRET in production).
+    let secret = Environment.get("JWT_SECRET") ?? "dev-secret-change-me-in-production"
+    await app.jwt.keys.add(hmac: .init(from: Array(secret.utf8)), digestAlgorithm: .sha256)
+
     // JSON coders that match the iOS app's APIEventStore contract (ISO-8601 dates).
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
@@ -18,6 +23,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateCreator())
     app.migrations.add(CreateEvent())
     app.migrations.add(CreateMedia())
+    app.migrations.add(CreateUser())
     try await app.autoMigrate()
 
     try await seedIfEmpty(app)

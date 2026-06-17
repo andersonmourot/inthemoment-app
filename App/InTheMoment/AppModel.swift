@@ -15,22 +15,28 @@ final class AppModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
-    /// The creator currently acting in "creator mode" (the signed-in account).
-    @Published var currentCreator: Creator
+    /// The creator currently acting in "creator mode" (the signed-in account),
+    /// or `nil` when browsing as an anonymous viewer.
+    @Published var currentCreator: Creator?
+
+    /// Whether a creator is signed in (creator-only features are gated on this).
+    var isSignedIn: Bool { currentCreator != nil }
 
     /// Event to present when the app is opened via a deep link.
     @Published var deepLinkedEvent: Event?
 
     private let store: EventStore
 
-    init(store: EventStore? = nil, currentCreator: Creator = SampleData.aurora) {
+    init(store: EventStore? = nil, currentCreator: Creator? = nil) {
         self.store = store ?? AppModel.makeDefaultStore()
         self.currentCreator = currentCreator
     }
 
     /// The shared backend so events and uploads are visible across all users.
+    /// Wrapped in an ``AuthenticatedTransport`` so mutations carry the bearer token.
     private static func makeDefaultStore() -> EventStore {
-        APIEventStore(baseURL: AppConfig.apiBaseURL)
+        let transport = AuthenticatedTransport { TokenHolder.shared.token }
+        return APIEventStore(baseURL: AppConfig.apiBaseURL, transport: transport)
     }
 
     func bootstrap() async {
@@ -43,10 +49,13 @@ final class AppModel: ObservableObject {
         do {
             async let published = store.publishedEvents()
             async let people = store.allCreators()
-            async let mine = store.events(forCreator: currentCreator.id)
             self.events = try await published
             self.creators = try await people
-            self.myEventsList = try await mine
+            if let creator = currentCreator {
+                self.myEventsList = try await store.events(forCreator: creator.id)
+            } else {
+                self.myEventsList = []
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -61,8 +70,9 @@ final class AppModel: ObservableObject {
     // MARK: Mutations
 
     func createEvent(title: String, details: String?, location: String?, date: Date) async {
+        guard let creator = currentCreator else { return }
         let event = Event(
-            creatorId: currentCreator.id,
+            creatorId: creator.id,
             title: title,
             details: details?.nilIfBlank,
             location: location?.nilIfBlank,
@@ -105,8 +115,16 @@ final class AppModel: ObservableObject {
         events.first { $0.id == id } ?? myEventsList.first { $0.id == id }
     }
 
-    func switchCreator(to creator: Creator) async {
+    /// Called after a successful sign-in/registration.
+    func signIn(as creator: Creator) async {
         currentCreator = creator
+        await refresh()
+    }
+
+    /// Clears creator state on sign-out (token is cleared separately by AuthService).
+    func signOut() async {
+        currentCreator = nil
+        myEventsList = []
         await refresh()
     }
 

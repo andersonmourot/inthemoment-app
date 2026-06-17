@@ -1,0 +1,67 @@
+# Agent & Contributor Guide
+
+Conventions for anyone working in this repo — humans and AI assistants (Cursor,
+Copilot, Claude, etc.) alike. Keep this short and follow it.
+
+## The golden rules
+
+1. **Never hand-edit `InTheMoment.xcodeproj`.** It is generated from `project.yml`
+   by [XcodeGen](https://github.com/yonaskolb/XcodeGen). To add/remove/rename
+   source files, change the files on disk (XcodeGen globs `App/InTheMoment`) and
+   run `xcodegen generate`. Commit the regenerated `.xcodeproj`.
+2. **Shared models live in `InTheMomentCore` only.** `Creator`, `Event`,
+   `MediaItem` are used by *both* the iOS app and the `Server`. Change them in one
+   place; never duplicate them. They are plain `Codable`/`Sendable` DTOs — keep
+   UIKit/SwiftUI/Vapor out of `Sources/InTheMomentCore`.
+3. **The app talks to data only through the `EventStore` protocol.** Don't call
+   networking from views. Add behavior to a store or to `AppModel`.
+4. **Dates are ISO-8601 everywhere.** The app, `APIEventStore`, and the server all
+   use `.iso8601` JSON coding. Don't change one side without the others.
+
+## Project layout
+
+| Path | What | Builds where |
+| --- | --- | --- |
+| `Sources/InTheMomentCore/` | Shared models, `EventStore` + stores, auth client | Linux/CI + Apple |
+| `Tests/InTheMomentCoreTests/` | XCTest for the core | Linux/CI |
+| `App/InTheMoment/` | SwiftUI app + `AppModel` + services | Xcode (macOS) only |
+| `Server/` | Vapor + Fluent + SQLite backend | Linux/CI + Apple |
+
+## How to verify changes
+
+```bash
+swift build && swift test          # core (always run this)
+cd Server && swift build           # server
+xcodegen generate                  # after any App/ file change
+```
+
+The iOS app target needs Apple's SDK and is **not** built in CI — verify it by
+building the `InTheMoment` scheme in Xcode on a Mac. CI (`.github/workflows/ci.yml`)
+builds + tests the core and builds the server on Linux.
+
+## Backends
+
+`AppModel.makeDefaultStore()` returns the production store:
+
+```swift
+APIEventStore(baseURL: AppConfig.apiBaseURL,
+              transport: AuthenticatedTransport { TokenHolder.shared.token })
+```
+
+Swap stores for tests/previews by injecting `AppModel(store:)`. `AppConfig.apiBaseURL`
+honors the `ITM_API_BASE_URL` env var so you can point at a local server.
+
+## Auth model
+
+- `POST /auth/register`, `POST /auth/login` → `{ token, creator }`.
+- The JWT carries the user id (`sub`) and their `creatorId`.
+- Read routes are public; write routes require `Authorization: Bearer <token>` and
+  reject edits to events you don't own (server enforces ownership from the token,
+  not the request body).
+
+## Style
+
+- Match the surrounding code. Terse; comments only where intent isn't obvious.
+- Keep `Sources/InTheMomentCore` free of platform frameworks.
+- Prefer small, focused changes. Add/keep tests for core logic.
+- Don't commit secrets. `JWT_SECRET` and tokens come from the environment / Keychain.
