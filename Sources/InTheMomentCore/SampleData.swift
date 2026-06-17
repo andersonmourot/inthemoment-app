@@ -93,6 +93,11 @@ public enum SampleData {
         Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date()
     }
 
+    /// State pre-populated with the sample creators and events.
+    public static func makeState() -> StoreState {
+        StoreState(creators: creators, events: events)
+    }
+
     /// A store pre-populated with the sample creators and events.
     public static func makeStore() -> InMemoryEventStore {
         InMemoryEventStore(creators: creators, events: events)

@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		088325F4B8290D1BFEBCF3B7 /* AddMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB47E7E728B76DBBBBBB9A6E /* AddMediaView.swift */; };
 		15A9DB7B71ED262083E59E56 /* MediaStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2F79D5798C35D8E8B7B2E32 /* MediaStorage.swift */; };
+		185278575EE8F9F4E1A52953 /* EditEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDECA4A6A92ACAC9526AB08 /* EditEventView.swift */; };
 		258F346FDA0B5B167C9E804C /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5AFCD32736E62820F818286 /* DiscoverView.swift */; };
 		5FB94CA6944C9A96A33E7C27 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EE57FC0A78D2C968D4E1F4 /* Theme.swift */; };
 		6C2300DAA882DD230B0F93B2 /* EventDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA0F53027D9BA96BDA23918 /* EventDetailView.swift */; };
@@ -32,9 +33,11 @@
 		1133F97AF61BAD1F4CA8BBCA /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		1336F4C0EC31E3A6F248E0E5 /* CreatorEventDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorEventDetailView.swift; sourceTree = "<group>"; };
 		16F355E818EB52D3EEAF6F8A /* MyEventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyEventsView.swift; sourceTree = "<group>"; };
+		1DDECA4A6A92ACAC9526AB08 /* EditEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditEventView.swift; sourceTree = "<group>"; };
 		2E515F91AFBC93E6EF0DFFBB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		34A83BC1A57A3979C2BFF8BF /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		3FEDDAEA7025E3A344780DEB /* ContentUnavailableViewCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentUnavailableViewCompat.swift; sourceTree = "<group>"; };
+		640FCDA751E26FC0E14B7E39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		71F38CFEE702E3E79AB67DF0 /* InTheMomentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InTheMomentApp.swift; sourceTree = "<group>"; };
 		82767A536B5865B775F3AFEA /* InTheMoment.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = InTheMoment.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BA0F53027D9BA96BDA23918 /* EventDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDetailView.swift; sourceTree = "<group>"; };
@@ -76,6 +79,7 @@
 			children = (
 				1133F97AF61BAD1F4CA8BBCA /* AppModel.swift */,
 				2E515F91AFBC93E6EF0DFFBB /* Assets.xcassets */,
+				640FCDA751E26FC0E14B7E39 /* Info.plist */,
 				71F38CFEE702E3E79AB67DF0 /* InTheMomentApp.swift */,
 				C2EE57FC0A78D2C968D4E1F4 /* Theme.swift */,
 				CBAE7653E3C5F6482ACFD733 /* Services */,
@@ -172,6 +176,7 @@
 				AB47E7E728B76DBBBBBB9A6E /* AddMediaView.swift */,
 				F7381D0E26B62B02E4560FC0 /* CreateEventView.swift */,
 				1336F4C0EC31E3A6F248E0E5 /* CreatorEventDetailView.swift */,
+				1DDECA4A6A92ACAC9526AB08 /* EditEventView.swift */,
 				16F355E818EB52D3EEAF6F8A /* MyEventsView.swift */,
 			);
 			path = Creator;
@@ -255,6 +260,7 @@
 				BF0F38E542782DBE6AB343CC /* CreateEventView.swift in Sources */,
 				D61A56B3AE42E33FA3717F4A /* CreatorEventDetailView.swift in Sources */,
 				258F346FDA0B5B167C9E804C /* DiscoverView.swift in Sources */,
+				185278575EE8F9F4E1A52953 /* EditEventView.swift in Sources */,
 				6C2300DAA882DD230B0F93B2 /* EventDetailView.swift in Sources */,
 				ABD5CE3C20EE51396966AB46 /* InTheMomentApp.swift in Sources */,
 				E5C4ED6965E49869ED3A4663 /* MediaDetailView.swift in Sources */,
@@ -342,13 +348,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "In The Moment";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save event photos and videos to your library so you can use them however you like.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pick photos and videos from your library to post to your events.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_FILE = App/InTheMoment/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -368,13 +368,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "In The Moment";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save event photos and videos to your library so you can use them however you like.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Pick photos and videos from your library to post to your events.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_FILE = App/InTheMoment/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

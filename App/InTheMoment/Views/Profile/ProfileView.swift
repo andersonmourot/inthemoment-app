@@ -15,7 +15,7 @@ struct ProfileView: View {
                 Section("Switch acting creator") {
                     ForEach(model.creators) { creator in
                         Button {
-                            model.currentCreator = creator
+                            Task { await model.switchCreator(to: creator) }
                         } label: {
                             HStack {
                                 Text(creator.displayName)

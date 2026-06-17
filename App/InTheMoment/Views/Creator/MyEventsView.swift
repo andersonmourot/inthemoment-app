@@ -60,7 +60,16 @@ private struct MyEventRow: View {
                 .frame(width: 56, height: 56)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             VStack(alignment: .leading, spacing: 2) {
-                Text(event.title).font(.headline)
+                HStack(spacing: 6) {
+                    Text(event.title).font(.headline)
+                    if !event.isPublished {
+                        Text("Draft")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.secondary.opacity(0.2), in: Capsule())
+                    }
+                }
                 Text("\(event.mediaCount) items · \(event.date.eventDayString)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
