@@ -19,6 +19,31 @@ enum MediaDownloader {
         }
     }
 
+    /// Result of a batch download: how many items saved vs. failed/skipped.
+    struct BatchResult: Sendable {
+        var saved: Int
+        var failed: Int
+    }
+
+    /// Downloads every downloadable item in `items` to the photo library.
+    /// Permission is requested once up front; individual failures are counted, not thrown.
+    static func saveAllToPhotoLibrary(_ items: [MediaItem]) async throws -> BatchResult {
+        let downloadable = items.filter(\.isDownloadable)
+        guard !downloadable.isEmpty else { throw DownloadError.notDownloadable }
+        try await requestAddPermission()
+
+        var result = BatchResult(saved: 0, failed: 0)
+        for item in downloadable {
+            do {
+                try await saveToPhotoLibrary(item)
+                result.saved += 1
+            } catch {
+                result.failed += 1
+            }
+        }
+        return result
+    }
+
     /// Downloads `item` and writes it to the photo library, requesting permission if needed.
     static func saveToPhotoLibrary(_ item: MediaItem) async throws {
         guard item.isDownloadable else { throw DownloadError.notDownloadable }

@@ -6,6 +6,9 @@ struct RootTabView: View {
             DiscoverView()
                 .tabItem { Label("Discover", systemImage: "sparkles") }
 
+            SavedView()
+                .tabItem { Label("Saved", systemImage: "heart") }
+
             MyEventsView()
                 .tabItem { Label("My Events", systemImage: "rectangle.stack.badge.plus") }
 

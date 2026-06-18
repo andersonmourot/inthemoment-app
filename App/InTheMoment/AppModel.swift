@@ -25,10 +25,15 @@ final class AppModel: ObservableObject {
     /// Event to present when the app is opened via a deep link.
     @Published var deepLinkedEvent: Event?
 
-    private let store: EventStore
+    /// The fan's on-device favorites and followed creators.
+    @Published private(set) var fanPrefs = FanPreferences()
 
-    init(store: EventStore? = nil, currentCreator: Creator? = nil) {
+    private let store: EventStore
+    private let fanStore: FanPreferencesStore
+
+    init(store: EventStore? = nil, fanStore: FanPreferencesStore? = nil, currentCreator: Creator? = nil) {
         self.store = store ?? AppModel.makeDefaultStore()
+        self.fanStore = fanStore ?? AppModel.makeDefaultFanStore()
         self.currentCreator = currentCreator
     }
 
@@ -39,7 +44,14 @@ final class AppModel: ObservableObject {
         return APIEventStore(baseURL: AppConfig.apiBaseURL, transport: transport)
     }
 
+    private static func makeDefaultFanStore() -> FanPreferencesStore {
+        let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let url = base.appendingPathComponent("fan-preferences.json")
+        return (try? FileFanPreferencesStore(fileURL: url)) ?? InMemoryFanPreferencesStore()
+    }
+
     func bootstrap() async {
+        fanPrefs = (try? await fanStore.preferences()) ?? FanPreferences()
         await refresh()
     }
 
@@ -126,6 +138,40 @@ final class AppModel: ObservableObject {
         currentCreator = nil
         myEventsList = []
         await refresh()
+    }
+
+    // MARK: Fan preferences (favorites & follows)
+
+    func isFavorite(_ eventID: UUID) -> Bool { fanPrefs.isFavorite(eventID) }
+    func isFollowing(_ creatorID: UUID) -> Bool { fanPrefs.isFollowing(creatorID) }
+
+    func toggleFavorite(_ eventID: UUID) async {
+        let newValue = !fanPrefs.isFavorite(eventID)
+        if let updated = try? await fanStore.setFavorite(eventID: eventID, newValue) {
+            fanPrefs = updated
+        }
+    }
+
+    func toggleFollow(_ creatorID: UUID) async {
+        let newValue = !fanPrefs.isFollowing(creatorID)
+        if let updated = try? await fanStore.setFollowing(creatorID: creatorID, newValue) {
+            fanPrefs = updated
+        }
+    }
+
+    /// Favorited events that are still available in the loaded feed, newest first.
+    var favoriteEvents: [Event] {
+        EventFeed.events(events, withIDs: fanPrefs.favoriteEventIDs)
+    }
+
+    /// Creators the fan follows.
+    var followedCreators: [Creator] {
+        creators.filter { fanPrefs.isFollowing($0.id) }
+    }
+
+    /// Published events from creators the fan follows, newest first.
+    var followedEvents: [Event] {
+        EventFeed.sortedByDate(EventFeed.events(events, byCreators: fanPrefs.followedCreatorIDs))
     }
 
     private func perform(_ action: @escaping () async throws -> Void) async {

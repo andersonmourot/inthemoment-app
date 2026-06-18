@@ -44,6 +44,8 @@ public struct Event: Identifiable, Codable, Hashable, Sendable {
     public var photoCount: Int { media.lazy.filter { $0.kind == .photo }.count }
     public var videoCount: Int { media.lazy.filter { $0.kind == .video }.count }
     public var mediaCount: Int { media.count }
+    /// Number of media items the creator allows fans to download.
+    public var downloadableCount: Int { media.lazy.filter(\.isDownloadable).count }
 
     /// Cover image to display, falling back to the first media preview when no cover is set.
     public var displayCoverURL: URL? { coverImageURL ?? media.first?.previewURL }
