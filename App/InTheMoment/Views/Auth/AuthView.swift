@@ -1,19 +1,26 @@
 import SwiftUI
 import InTheMomentCore
 
-/// Sign-in / sign-up form presented when a creator wants to manage events.
+/// Sign-in / sign-up form. Fans create an account with just email + password
+/// (favorites/follows sync across devices); creators also set up a profile so
+/// they can post events.
 struct AuthView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var auth: AuthService
     @Environment(\.dismiss) private var dismiss
 
     private enum Mode { case login, register }
+    private enum AccountKind { case fan, creator }
+
     @State private var mode: Mode = .login
+    @State private var accountKind: AccountKind = .fan
 
     @State private var email = ""
     @State private var password = ""
     @State private var displayName = ""
     @State private var handle = ""
+
+    private var isCreatorRegistration: Bool { mode == .register && accountKind == .creator }
 
     var body: some View {
         NavigationStack {
@@ -26,6 +33,20 @@ struct AuthView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
 
+                if mode == .register {
+                    Section {
+                        Picker("Account type", selection: $accountKind) {
+                            Text("Fan").tag(AccountKind.fan)
+                            Text("Creator").tag(AccountKind.creator)
+                        }
+                        .pickerStyle(.segmented)
+                    } footer: {
+                        Text(accountKind == .fan
+                             ? "Save favorites and follow creators — synced across your devices."
+                             : "Post photos and videos from your events for fans to view and download.")
+                    }
+                }
+
                 Section {
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
@@ -35,7 +56,7 @@ struct AuthView: View {
                         .textContentType(mode == .register ? .newPassword : .password)
                 }
 
-                if mode == .register {
+                if isCreatorRegistration {
                     Section("Your creator profile") {
                         TextField("Display name", text: $displayName)
                         TextField("Handle (e.g. aurora_live)", text: $handle)
@@ -77,7 +98,7 @@ struct AuthView: View {
 
     private var isValid: Bool {
         let base = email.contains("@") && password.count >= 8
-        if mode == .register {
+        if isCreatorRegistration {
             return base && !displayName.trimmingCharacters(in: .whitespaces).isEmpty
                 && Creator.isValidHandle(handle)
         }
@@ -86,15 +107,20 @@ struct AuthView: View {
 
     private func submit() {
         Task {
-            let creator: Creator?
+            let account: Account?
             switch mode {
             case .login:
-                creator = await auth.login(email: email, password: password)
+                account = await auth.login(email: email, password: password)
             case .register:
-                creator = await auth.register(email: email, password: password, displayName: displayName, handle: handle)
+                switch accountKind {
+                case .fan:
+                    account = await auth.registerFan(email: email, password: password)
+                case .creator:
+                    account = await auth.register(email: email, password: password, displayName: displayName, handle: handle)
+                }
             }
-            if let creator {
-                await model.signIn(as: creator)
+            if let account {
+                await model.didSignIn(account)
                 dismiss()
             }
         }

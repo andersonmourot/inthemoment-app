@@ -6,6 +6,18 @@ public protocol FanPreferencesStore: Sendable {
     func preferences() async throws -> FanPreferences
     @discardableResult func setFavorite(eventID: UUID, _ isFavorite: Bool) async throws -> FanPreferences
     @discardableResult func setFollowing(creatorID: UUID, _ isFollowing: Bool) async throws -> FanPreferences
+    /// Union-merges the given preferences into the store (used to push on-device
+    /// favorites/follows up to a freshly signed-in account). Returns the result.
+    @discardableResult func merge(_ other: FanPreferences) async throws -> FanPreferences
+}
+
+public extension FanPreferencesStore {
+    @discardableResult
+    func merge(_ other: FanPreferences) async throws -> FanPreferences {
+        for eventID in other.favoriteEventIDs { try await setFavorite(eventID: eventID, true) }
+        for creatorID in other.followedCreatorIDs { try await setFollowing(creatorID: creatorID, true) }
+        return try await preferences()
+    }
 }
 
 /// In-memory implementation for previews and tests.

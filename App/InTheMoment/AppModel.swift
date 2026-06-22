@@ -16,11 +16,17 @@ final class AppModel: ObservableObject {
     @Published var errorMessage: String?
 
     /// The creator currently acting in "creator mode" (the signed-in account),
-    /// or `nil` when browsing as an anonymous viewer.
+    /// or `nil` when browsing as an anonymous viewer or a fan.
     @Published var currentCreator: Creator?
+
+    /// The email of the signed-in account (creator or fan), or `nil` if anonymous.
+    @Published private(set) var signedInEmail: String?
 
     /// Whether a creator is signed in (creator-only features are gated on this).
     var isSignedIn: Bool { currentCreator != nil }
+
+    /// Whether any account (creator or fan) is signed in.
+    var isAccountSignedIn: Bool { signedInEmail != nil }
 
     /// Event to present when the app is opened via a deep link.
     @Published var deepLinkedEvent: Event?
@@ -29,7 +35,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var fanPrefs = FanPreferences()
 
     private let store: EventStore
-    private let fanStore: FanPreferencesStore
+    /// Swapped between the on-device file store (anonymous) and the API store
+    /// (signed in) so favorites/follows sync to the account when logged in.
+    private var fanStore: FanPreferencesStore
 
     init(store: EventStore? = nil, fanStore: FanPreferencesStore? = nil, currentCreator: Creator? = nil) {
         self.store = store ?? AppModel.makeDefaultStore()
@@ -50,7 +58,20 @@ final class AppModel: ObservableObject {
         return (try? FileFanPreferencesStore(fileURL: url)) ?? InMemoryFanPreferencesStore()
     }
 
-    func bootstrap() async {
+    /// The account-backed fan store (favorites/follows sync across devices).
+    private static func makeAPIFanStore() -> FanPreferencesStore {
+        let transport = AuthenticatedTransport { TokenHolder.shared.token }
+        return APIFanPreferencesStore(baseURL: AppConfig.apiBaseURL, transport: transport)
+    }
+
+    /// Loads initial data. When restoring a signed-in `account`, switches to the
+    /// account-backed fan store so favorites/follows come from the server.
+    func bootstrap(account: Account? = nil) async {
+        if let account {
+            currentCreator = account.creator
+            signedInEmail = account.email
+            fanStore = AppModel.makeAPIFanStore()
+        }
         fanPrefs = (try? await fanStore.preferences()) ?? FanPreferences()
         await refresh()
     }
@@ -127,16 +148,31 @@ final class AppModel: ObservableObject {
         events.first { $0.id == id } ?? myEventsList.first { $0.id == id }
     }
 
-    /// Called after a successful sign-in/registration.
-    func signIn(as creator: Creator) async {
-        currentCreator = creator
+    /// Called after a successful sign-in/registration. Switches to the account's
+    /// server-backed fan store and merges any on-device favorites/follows up to it
+    /// so nothing collected while anonymous is lost.
+    func didSignIn(_ account: Account) async {
+        let local = (try? await fanStore.preferences()) ?? fanPrefs
+        currentCreator = account.creator
+        signedInEmail = account.email
+        let api = AppModel.makeAPIFanStore()
+        fanStore = api
+        if let merged = try? await api.merge(local) {
+            fanPrefs = merged
+        } else {
+            fanPrefs = (try? await api.preferences()) ?? FanPreferences()
+        }
         await refresh()
     }
 
-    /// Clears creator state on sign-out (token is cleared separately by AuthService).
-    func signOut() async {
+    /// Clears account state on sign-out (token is cleared separately by AuthService)
+    /// and returns to the on-device fan store.
+    func didSignOut() async {
         currentCreator = nil
+        signedInEmail = nil
         myEventsList = []
+        fanStore = AppModel.makeDefaultFanStore()
+        fanPrefs = (try? await fanStore.preferences()) ?? FanPreferences()
         await refresh()
     }
 

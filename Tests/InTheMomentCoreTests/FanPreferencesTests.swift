@@ -1,5 +1,20 @@
 import XCTest
 @testable import InTheMomentCore
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
+private final class FanMockTransport: HTTPTransport, @unchecked Sendable {
+    typealias Handler = (URLRequest) throws -> (Int, Data)
+    private let handler: Handler
+    private(set) var requests: [URLRequest] = []
+    init(_ handler: @escaping Handler) { self.handler = handler }
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests.append(request)
+        let (status, data) = try handler(request)
+        return (data, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+    }
+}
 
 final class FanPreferencesTests: XCTestCase {
     func testFavoriteAndFollowToggling() {
@@ -42,6 +57,34 @@ final class FanPreferencesTests: XCTestCase {
         let prefs = try await reopened.preferences()
         XCTAssertEqual(prefs.favoriteEventIDs, [event])
         XCTAssertEqual(prefs.followedCreatorIDs, [creator])
+    }
+
+    func testDefaultMergeUnionsPreferences() async throws {
+        let existing = UUID(), incoming = UUID(), creator = UUID()
+        let store = InMemoryFanPreferencesStore(FanPreferences(favoriteEventIDs: [existing]))
+        let merged = try await store.merge(FanPreferences(favoriteEventIDs: [incoming], followedCreatorIDs: [creator]))
+        XCTAssertEqual(merged.favoriteEventIDs, [existing, incoming])
+        XCTAssertEqual(merged.followedCreatorIDs, [creator])
+    }
+
+    func testAPIStoreToggleUsesCorrectMethodAndPath() async throws {
+        let event = UUID()
+        let prefs = FanPreferences(favoriteEventIDs: [event])
+        let payload = try JSONEncoder().encode(prefs)
+        let transport = FanMockTransport { _ in (200, payload) }
+        let store = APIFanPreferencesStore(baseURL: URL(string: "https://api.inthemoment.app")!, transport: transport)
+
+        let added = try await store.setFavorite(eventID: event, true)
+        XCTAssertEqual(added.favoriteEventIDs, [event])
+        XCTAssertEqual(transport.requests.last?.httpMethod, "POST")
+        XCTAssertEqual(transport.requests.last?.url?.path, "/me/favorites/\(event.uuidString)")
+
+        _ = try await store.setFavorite(eventID: event, false)
+        XCTAssertEqual(transport.requests.last?.httpMethod, "DELETE")
+
+        _ = try await store.merge(prefs)
+        XCTAssertEqual(transport.requests.last?.httpMethod, "PUT")
+        XCTAssertEqual(transport.requests.last?.url?.path, "/me/preferences")
     }
 
     func testFeedFiltersByFavoritesAndFollows() {

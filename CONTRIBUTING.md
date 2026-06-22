@@ -56,11 +56,28 @@ ISO-8601 dates. The contract mirrors `APIEventStore`.
 
 ### Auth
 
+An account is either a **creator** (has a `Creator` profile, can post events) or a
+**fan** (email + password only). Login works for both. `creator` is `null` for fans.
+
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
 | `POST` | `/auth/register` | `{ email, password, displayName, handle }` | `{ token, creator }` |
-| `POST` | `/auth/login` | `{ email, password }` | `{ token, creator }` |
-| `GET` | `/auth/me` | — (Bearer token) | `Creator` |
+| `POST` | `/auth/register-fan` | `{ email, password }` | `{ token, creator: null }` |
+| `POST` | `/auth/login` | `{ email, password }` | `{ token, creator? }` |
+| `GET` | `/auth/me` | — (Bearer token) | `{ email, creator? }` |
+
+### Fan preferences (favorites & follows)
+
+Per-account, so they sync across devices. All require `Authorization: Bearer <token>`
+and act on the token's user. Each mutating call returns the updated `FanPreferences`
+(`{ favoriteEventIDs: [uuid], followedCreatorIDs: [uuid] }`).
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/me/preferences` | current favorites + follows |
+| `PUT` | `/me/preferences` | union-merge a `FanPreferences` body (used on first sign-in) |
+| `POST` · `DELETE` | `/me/favorites/{eventId}` | add / remove a favorite |
+| `POST` · `DELETE` | `/me/follows/{creatorId}` | follow / unfollow |
 
 ### Events & media
 

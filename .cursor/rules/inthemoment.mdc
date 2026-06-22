@@ -36,9 +36,13 @@ wraps it in `AuthenticatedTransport` to attach the bearer token.
 
 ## Auth
 
-Register/login return `{ token, creator }`. Read routes are public; write routes
-require `Authorization: Bearer <token>` and enforce per-creator ownership on the
-server (derived from the token, not the request body).
+Accounts are creators (have a `Creator` profile) or fans (email + password only).
+`/auth/register` (creator), `/auth/register-fan` (fan) and `/auth/login` return
+`{ token, creator? }`. Read routes are public; event/creator writes require a
+creator token and enforce per-creator ownership (derived from the token, not the
+body). Fan favorites/follows sync per-account via `/me/preferences`,
+`/me/favorites/{id}`, `/me/follows/{id}`; the app uses `APIFanPreferencesStore`
+when signed in and `FileFanPreferencesStore` when anonymous.
 
 ## Verifying changes
 

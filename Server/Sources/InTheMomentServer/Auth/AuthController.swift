@@ -15,15 +15,28 @@ struct LoginRequest: Content {
     let password: String
 }
 
+struct FanRegisterRequest: Content {
+    let email: String
+    let password: String
+}
+
+/// Returned on register/login. `creator` is nil for fan accounts.
 struct AuthResponse: Content {
     let token: String
-    let creator: Creator
+    let creator: Creator?
+}
+
+/// Returned by `/auth/me` — the signed-in account, with its creator profile if any.
+struct AccountResponse: Content {
+    let email: String
+    let creator: Creator?
 }
 
 struct AuthController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let auth = routes.grouped("auth")
         auth.post("register", use: register)
+        auth.post("register-fan", use: registerFan)
         auth.post("login", use: login)
 
         let protected = auth.grouped(UserToken.authenticator(), UserToken.guardMiddleware())
@@ -63,6 +76,28 @@ struct AuthController: RouteCollection {
         return try await makeResponse(for: user, creator: creator, req: req)
     }
 
+    /// Registers a fan account: email + password only, no creator profile.
+    func registerFan(req: Request) async throws -> AuthResponse {
+        let body = try req.content.decode(FanRegisterRequest.self)
+        let email = body.email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard email.contains("@"), email.count >= 3 else {
+            throw Abort(.unprocessableEntity, reason: "A valid email is required.")
+        }
+        guard body.password.count >= 8 else {
+            throw Abort(.unprocessableEntity, reason: "Password must be at least 8 characters.")
+        }
+        guard try await UserModel.query(on: req.db).filter(\.$email == email).first() == nil else {
+            throw Abort(.conflict, reason: "An account with that email already exists.")
+        }
+
+        let hash = try await req.password.async.hash(body.password)
+        let user = UserModel(email: email, passwordHash: hash, creatorId: nil)
+        try await user.create(on: req.db)
+
+        return try await makeResponse(for: user, creator: nil, req: req)
+    }
+
     func login(req: Request) async throws -> AuthResponse {
         let body = try req.content.decode(LoginRequest.self)
         let email = body.email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -73,23 +108,27 @@ struct AuthController: RouteCollection {
         guard try await req.password.async.verify(body.password, created: user.passwordHash) else {
             throw Abort(.unauthorized, reason: "Invalid email or password.")
         }
-        guard let creatorModel = try await CreatorModel.find(user.creatorId, on: req.db) else {
-            throw Abort(.internalServerError, reason: "Creator profile missing.")
-        }
 
-        return try await makeResponse(for: user, creator: creatorModel.toDTO(), req: req)
+        let creator = try await Self.creator(for: user, on: req.db)
+        return try await makeResponse(for: user, creator: creator, req: req)
     }
 
-    func me(req: Request) async throws -> Creator {
+    func me(req: Request) async throws -> AccountResponse {
         let token = try req.auth.require(UserToken.self)
-        guard let creatorModel = try await CreatorModel.find(token.creatorId, on: req.db) else {
-            throw Abort(.notFound)
-        }
-        return creatorModel.toDTO()
+        let userId = try token.requireUserID()
+        guard let user = try await UserModel.find(userId, on: req.db) else { throw Abort(.notFound) }
+        let creator = try await Self.creator(for: user, on: req.db)
+        return AccountResponse(email: user.email, creator: creator)
     }
 
-    private func makeResponse(for user: UserModel, creator: Creator, req: Request) async throws -> AuthResponse {
-        let payload = UserToken(userId: try user.requireID(), creatorId: creator.id)
+    /// Resolves the user's creator profile, if they have one.
+    private static func creator(for user: UserModel, on db: Database) async throws -> Creator? {
+        guard let creatorId = user.creatorId else { return nil }
+        return try await CreatorModel.find(creatorId, on: db)?.toDTO()
+    }
+
+    private func makeResponse(for user: UserModel, creator: Creator?, req: Request) async throws -> AuthResponse {
+        let payload = UserToken(userId: try user.requireID(), creatorId: creator?.id)
         let token = try await req.jwt.sign(payload)
         return AuthResponse(token: token, creator: creator)
     }
