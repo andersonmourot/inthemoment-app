@@ -3,13 +3,25 @@ import Foundation
 import FoundationNetworking
 #endif
 
-/// The result of a successful authentication: a bearer token and the signed-in creator.
+/// The result of a successful authentication: a bearer token and, for creator
+/// accounts, the signed-in creator profile (`nil` for fan accounts).
 public struct AuthSession: Codable, Sendable, Equatable {
     public let token: String
-    public let creator: Creator
+    public let creator: Creator?
 
-    public init(token: String, creator: Creator) {
+    public init(token: String, creator: Creator?) {
         self.token = token
+        self.creator = creator
+    }
+}
+
+/// The signed-in account, as returned by `/auth/me`. A fan account has no creator.
+public struct Account: Codable, Sendable, Equatable {
+    public let email: String
+    public let creator: Creator?
+
+    public init(email: String, creator: Creator?) {
+        self.email = email
         self.creator = creator
     }
 }
@@ -45,21 +57,31 @@ public actor AuthClient {
         let password: String
     }
 
+    private struct FanRegisterBody: Encodable {
+        let email: String
+        let password: String
+    }
+
     public func register(email: String, password: String, displayName: String, handle: String) async throws -> AuthSession {
         try await post("auth/register", body: RegisterBody(email: email, password: password, displayName: displayName, handle: handle))
+    }
+
+    /// Registers a fan account (email + password only, no creator profile).
+    public func registerFan(email: String, password: String) async throws -> AuthSession {
+        try await post("auth/register-fan", body: FanRegisterBody(email: email, password: password))
     }
 
     public func login(email: String, password: String) async throws -> AuthSession {
         try await post("auth/login", body: LoginBody(email: email, password: password))
     }
 
-    public func me(token: String) async throws -> Creator {
+    public func me(token: String) async throws -> Account {
         var request = URLRequest(url: baseURL.appendingPathComponent("auth/me"))
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (data, http) = try await transport.send(request)
         try validate(http, data: data)
-        return try decoder.decode(Creator.self, from: data)
+        return try decoder.decode(Account.self, from: data)
     }
 
     private func post<Body: Encodable>(_ path: String, body: Body) async throws -> AuthSession {

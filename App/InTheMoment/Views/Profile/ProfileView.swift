@@ -14,20 +14,29 @@ struct ProfileView: View {
                     Section {
                         CreatorHeader(creator: creator)
                     }
+                    signOutSection
+                } else if let email = model.signedInEmail {
                     Section {
-                        Button(role: .destructive) {
-                            auth.logout()
-                            Task { await model.signOut() }
-                        } label: {
-                            Text("Sign Out")
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Signed in as a fan")
+                                .font(.headline)
+                            Text(email)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            Text("Your favorites and follows sync across your devices.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 2)
                         }
+                        .padding(.vertical, 4)
                     }
+                    signOutSection
                 } else {
                     Section {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("You're browsing as a viewer")
                                 .font(.headline)
-                            Text("Sign in or create a creator account to post photos and videos from your events.")
+                            Text("Sign in to sync your favorites and follows across devices, or create a creator account to post from your events.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                             Button {
@@ -66,6 +75,17 @@ struct ProfileView: View {
             .navigationTitle("Profile")
             .sheet(isPresented: $showingAuth) {
                 AuthView()
+            }
+        }
+    }
+
+    private var signOutSection: some View {
+        Section {
+            Button(role: .destructive) {
+                auth.logout()
+                Task { await model.didSignOut() }
+            } label: {
+                Text("Sign Out")
             }
         }
     }

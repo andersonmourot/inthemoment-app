@@ -9,6 +9,7 @@ func routes(_ app: Application) throws {
     try app.register(collection: AuthController())
     try app.register(collection: CreatorController())
     try app.register(collection: EventController())
+    try app.register(collection: FanController())
 }
 
 struct CreatorController: RouteCollection {
@@ -38,7 +39,7 @@ struct CreatorController: RouteCollection {
     func update(req: Request) async throws -> Creator {
         let token = try req.auth.require(UserToken.self)
         guard let id = req.parameters.get("id", as: UUID.self) else { throw Abort(.badRequest) }
-        guard id == token.creatorId else { throw Abort(.forbidden) }
+        guard try id == token.requireCreatorID() else { throw Abort(.forbidden) }
         guard let existing = try await CreatorModel.find(id, on: req.db) else { throw Abort(.notFound) }
 
         let dto = try req.content.decode(Creator.self)
@@ -87,8 +88,9 @@ struct EventController: RouteCollection {
             throw Abort(.unprocessableEntity, reason: "Event title must be 1–100 characters.")
         }
         // Ownership: the event is always attributed to the authenticated creator.
+        let creatorId = try token.requireCreatorID()
         let model = EventModel(from: dto)
-        model.creatorId = token.creatorId
+        model.creatorId = creatorId
         return try await req.db.transaction { db in
             try await model.create(on: db)
             for item in dto.media {
@@ -110,7 +112,7 @@ struct EventController: RouteCollection {
         let model = try await Self.requireOwnedEvent(id, token: token, on: req.db)
         return try await req.db.transaction { db in
             model.applyFields(dto)
-            model.creatorId = token.creatorId
+            model.creatorId = try token.requireCreatorID()
             try await model.save(on: db)
             try await MediaModel.query(on: db).filter(\.$event.$id == id).delete()
             for item in dto.media {
@@ -167,8 +169,9 @@ struct EventController: RouteCollection {
 
     /// Loads an event and asserts the token's creator owns it.
     private static func requireOwnedEvent(_ id: UUID, token: UserToken, on db: Database) async throws -> EventModel {
+        let creatorId = try token.requireCreatorID()
         guard let model = try await EventModel.find(id, on: db) else { throw Abort(.notFound) }
-        guard model.creatorId == token.creatorId else { throw Abort(.forbidden) }
+        guard model.creatorId == creatorId else { throw Abort(.forbidden) }
         return model
     }
 

@@ -53,11 +53,15 @@ honors the `ITM_API_BASE_URL` env var so you can point at a local server.
 
 ## Auth model
 
-- `POST /auth/register`, `POST /auth/login` → `{ token, creator }`.
-- The JWT carries the user id (`sub`) and their `creatorId`.
-- Read routes are public; write routes require `Authorization: Bearer <token>` and
-  reject edits to events you don't own (server enforces ownership from the token,
-  not the request body).
+- Accounts are **creators** (have a `Creator` profile) or **fans** (email + password
+  only). `POST /auth/register` (creator), `POST /auth/register-fan` (fan), and
+  `POST /auth/login` return `{ token, creator? }`; `creator` is null for fans.
+- The JWT carries the user id (`sub`) and an optional `creatorId` (fans have none).
+- Read routes are public; event/creator write routes require a **creator** token and
+  enforce ownership (server derives the creator from the token, not the body).
+- Fan favorites/follows sync per-account via `/me/preferences` + `/me/favorites/{id}`
+  + `/me/follows/{id}` (any authenticated user). The app uses `APIFanPreferencesStore`
+  when signed in and the on-device `FileFanPreferencesStore` when anonymous.
 
 ## Style
 
