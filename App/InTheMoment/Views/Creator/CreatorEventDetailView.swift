@@ -6,8 +6,10 @@ import InTheMomentCore
 struct CreatorEventDetailView: View {
     let event: Event
     @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
     @State private var showingAdd = false
     @State private var showingEdit = false
+    @State private var showingDeleteConfirmation = false
     @State private var selectedMedia: MediaItem?
 
     private var liveEvent: Event { model.event(id: event.id) ?? event }
@@ -52,6 +54,11 @@ struct CreatorEventDetailView: View {
                     ShareLink(item: DeepLink.event(liveEvent.id).webURL) {
                         Label("Share link", systemImage: "square.and.arrow.up")
                     }
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete Event", systemImage: "trash")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -63,7 +70,27 @@ struct CreatorEventDetailView: View {
         .sheet(isPresented: $showingEdit) {
             EditEventView(event: liveEvent)
         }
+        .confirmationDialog(
+            "Delete this event?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Event", role: .destructive) {
+                deleteEvent()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes the event and its media from In The Moment.")
+        }
         .fullScreenCover(item: $selectedMedia) { MediaDetailView(item: $0) }
+    }
+
+    private func deleteEvent() {
+        let id = liveEvent.id
+        Task {
+            await model.deleteEvent(id)
+            dismiss()
+        }
     }
 
     private var statsCard: some View {
