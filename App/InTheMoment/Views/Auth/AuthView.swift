@@ -38,11 +38,13 @@ struct AuthView: View {
                 }
 
                 if mode == .register {
-                    Section("Your profile") {
+                    Section {
                         TextField("Display name", text: $displayName)
                         TextField("Handle (e.g. aurora_live)", text: $handle)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                    } header: {
+                        Text("Your profile")
                     } footer: {
                         Text("Use this profile to post events, comment, follow creators, and sync your saved items.")
                     }
