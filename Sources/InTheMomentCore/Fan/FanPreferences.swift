@@ -1,11 +1,10 @@
 import Foundation
 
-/// A fan's personal, per-device preferences: which events they've favorited and
-/// which creators they follow.
+/// A viewer's personal preferences: which events they've favorited and which
+/// creators they follow.
 ///
-/// Fans browse without an account, so this is stored locally (see
-/// ``FanPreferencesStore``). It's a plain `Codable` value type so it can later be
-/// synced to a server if fan accounts are added.
+/// Anonymous viewers store this locally (see ``FanPreferencesStore``); signed-in
+/// accounts sync it to the server.
 public struct FanPreferences: Codable, Sendable, Equatable {
     public var favoriteEventIDs: Set<UUID>
     public var followedCreatorIDs: Set<UUID>

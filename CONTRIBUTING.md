@@ -56,13 +56,14 @@ ISO-8601 dates. The contract mirrors `APIEventStore`.
 
 ### Auth
 
-An account is either a **creator** (has a `Creator` profile, can post events) or a
-**fan** (email + password only). Login works for both. `creator` is `null` for fans.
+There is one account type. Each new account has a `Creator` profile for posting
+events, and that same account also saves favorites/follows, likes, and comments.
+`creator` is optional in responses only so older accounts without a profile can
+continue to decode.
 
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
 | `POST` | `/auth/register` | `{ email, password, displayName, handle }` | `{ token, userId, creator }` |
-| `POST` | `/auth/register-fan` | `{ email, password }` | `{ token, userId, creator: null }` |
 | `POST` | `/auth/login` | `{ email, password }` | `{ token, userId, creator? }` |
 | `GET` | `/auth/me` | — (Bearer token) | `{ id, email, creator? }` |
 

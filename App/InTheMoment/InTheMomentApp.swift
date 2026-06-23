@@ -14,7 +14,7 @@ struct InTheMomentApp: App {
                     let account = await auth.restore()
                     await model.bootstrap(account: account)
                 }
-                .tint(.appAccent)
+                .tint(Color.appAccent)
                 .onOpenURL { url in
                     Task { await model.handle(url: url) }
                 }

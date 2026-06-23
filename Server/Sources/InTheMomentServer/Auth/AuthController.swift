@@ -15,12 +15,7 @@ struct LoginRequest: Content {
     let password: String
 }
 
-struct FanRegisterRequest: Content {
-    let email: String
-    let password: String
-}
-
-/// Returned on register/login. `creator` is nil for fan accounts.
+/// Returned on register/login. `creator` is nil only for older accounts without a profile.
 struct AuthResponse: Content {
     let token: String
     let userId: UUID
@@ -38,7 +33,6 @@ struct AuthController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let auth = routes.grouped("auth")
         auth.post("register", use: register)
-        auth.post("register-fan", use: registerFan)
         auth.post("login", use: login)
 
         let protected = auth.grouped(UserToken.authenticator(), UserToken.guardMiddleware())
@@ -76,28 +70,6 @@ struct AuthController: RouteCollection {
         }
 
         return try await makeResponse(for: user, creator: creator, req: req)
-    }
-
-    /// Registers a fan account: email + password only, no creator profile.
-    func registerFan(req: Request) async throws -> AuthResponse {
-        let body = try req.content.decode(FanRegisterRequest.self)
-        let email = body.email.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard email.contains("@"), email.count >= 3 else {
-            throw Abort(.unprocessableEntity, reason: "A valid email is required.")
-        }
-        guard body.password.count >= 8 else {
-            throw Abort(.unprocessableEntity, reason: "Password must be at least 8 characters.")
-        }
-        guard try await UserModel.query(on: req.db).filter(\.$email == email).first() == nil else {
-            throw Abort(.conflict, reason: "An account with that email already exists.")
-        }
-
-        let hash = try await req.password.async.hash(body.password)
-        let user = UserModel(email: email, passwordHash: hash, creatorId: nil)
-        try await user.create(on: req.db)
-
-        return try await makeResponse(for: user, creator: nil, req: req)
     }
 
     func login(req: Request) async throws -> AuthResponse {

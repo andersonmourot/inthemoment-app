@@ -1,26 +1,21 @@
 import SwiftUI
 import InTheMomentCore
 
-/// Sign-in / sign-up form. Fans create an account with just email + password
-/// (favorites/follows sync across devices); creators also set up a profile so
-/// they can post events.
+/// Sign-in / sign-up form. Every account has a profile for posting events, while
+/// favorites/follows sync across devices once signed in.
 struct AuthView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var auth: AuthService
     @Environment(\.dismiss) private var dismiss
 
     private enum Mode { case login, register }
-    private enum AccountKind { case fan, creator }
 
     @State private var mode: Mode = .login
-    @State private var accountKind: AccountKind = .fan
 
     @State private var email = ""
     @State private var password = ""
     @State private var displayName = ""
     @State private var handle = ""
-
-    private var isCreatorRegistration: Bool { mode == .register && accountKind == .creator }
 
     var body: some View {
         NavigationStack {
@@ -33,20 +28,6 @@ struct AuthView: View {
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
 
-                if mode == .register {
-                    Section {
-                        Picker("Account type", selection: $accountKind) {
-                            Text("Fan").tag(AccountKind.fan)
-                            Text("Creator").tag(AccountKind.creator)
-                        }
-                        .pickerStyle(.segmented)
-                    } footer: {
-                        Text(accountKind == .fan
-                             ? "Save favorites and follow creators — synced across your devices."
-                             : "Post photos and videos from your events for fans to view and download.")
-                    }
-                }
-
                 Section {
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
@@ -56,12 +37,14 @@ struct AuthView: View {
                         .textContentType(mode == .register ? .newPassword : .password)
                 }
 
-                if isCreatorRegistration {
-                    Section("Your creator profile") {
+                if mode == .register {
+                    Section("Your profile") {
                         TextField("Display name", text: $displayName)
                         TextField("Handle (e.g. aurora_live)", text: $handle)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                    } footer: {
+                        Text("Use this profile to post events, comment, follow creators, and sync your saved items.")
                     }
                 }
 
@@ -98,7 +81,7 @@ struct AuthView: View {
 
     private var isValid: Bool {
         let base = email.contains("@") && password.count >= 8
-        if isCreatorRegistration {
+        if mode == .register {
             return base && !displayName.trimmingCharacters(in: .whitespaces).isEmpty
                 && Creator.isValidHandle(handle)
         }
@@ -112,12 +95,7 @@ struct AuthView: View {
             case .login:
                 account = await auth.login(email: email, password: password)
             case .register:
-                switch accountKind {
-                case .fan:
-                    account = await auth.registerFan(email: email, password: password)
-                case .creator:
-                    account = await auth.register(email: email, password: password, displayName: displayName, handle: handle)
-                }
+                account = await auth.register(email: email, password: password, displayName: displayName, handle: handle)
             }
             if let account {
                 await model.didSignIn(account)

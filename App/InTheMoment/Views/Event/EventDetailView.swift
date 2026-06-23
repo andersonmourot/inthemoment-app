@@ -28,7 +28,7 @@ struct EventDetailView: View {
                     Text(liveEvent.title).font(.title2.bold())
                     if let creator = model.creator(id: liveEvent.creatorId) {
                         HStack {
-                            Text(creator.displayHandle).foregroundStyle(.appAccent)
+                            Text(creator.displayHandle).foregroundStyle(Color.appAccent)
                             Spacer()
                             FollowButton(creator: creator)
                         }
@@ -94,7 +94,7 @@ struct EventDetailView: View {
                 } label: {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
                 }
-                .tint(isFavorite ? .pink : .appAccent)
+                .tint(isFavorite ? .pink : Color.appAccent)
                 .accessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -132,7 +132,7 @@ struct EventDetailView: View {
                 .font(.subheadline.weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .tint(liked ? .appAccent : .secondary)
+        .tint(liked ? Color.appAccent : .secondary)
         .disabled(isTogglingLike || !model.isAccountSignedIn)
         .accessibilityLabel(liked ? "Unlike" : "Like")
     }
@@ -179,6 +179,6 @@ private struct FollowButton: View {
                 .font(.caption.weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .tint(following ? .secondary : .appAccent)
+        .tint(following ? .secondary : Color.appAccent)
     }
 }

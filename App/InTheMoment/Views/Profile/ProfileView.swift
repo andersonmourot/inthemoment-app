@@ -1,7 +1,7 @@
 import SwiftUI
 import InTheMomentCore
 
-/// The signed-in creator's profile and a directory of other creators.
+/// The signed-in profile and a directory of other creators.
 struct ProfileView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var auth: AuthService
@@ -18,12 +18,12 @@ struct ProfileView: View {
                 } else if let email = model.signedInEmail {
                     Section {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Signed in as a fan")
+                            Text("Signed in")
                                 .font(.headline)
                             Text(email)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
-                            Text("Your favorites and follows sync across your devices.")
+                            Text("Your saved items, follows, comments, and likes sync across your devices.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 2)
@@ -36,7 +36,7 @@ struct ProfileView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("You're browsing as a viewer")
                                 .font(.headline)
-                            Text("Sign in to sync your favorites and follows across devices, or create a creator account to post from your events.")
+                            Text("Sign in to sync your favorites and follows across devices, comment, like, and post events.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                             Button {
@@ -56,11 +56,11 @@ struct ProfileView: View {
                         HStack {
                             Text(creator.displayName)
                             if creator.isVerified {
-                                Image(systemName: "checkmark.seal.fill").foregroundStyle(.appAccent)
+                                Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
                             }
                             Spacer()
                             if creator.id == model.currentCreator?.id {
-                                Text("You").font(.caption).foregroundStyle(.appAccent)
+                                Text("You").font(.caption).foregroundStyle(Color.appAccent)
                             }
                         }
                     }
@@ -99,10 +99,10 @@ private struct CreatorHeader: View {
             RemoteImage(url: creator.avatarURL)
                 .frame(width: 60, height: 60)
                 .clipShape(Circle())
-                .overlay(Circle().stroke(.appAccent, lineWidth: 2))
+                .overlay(Circle().stroke(Color.appAccent, lineWidth: 2))
             VStack(alignment: .leading, spacing: 2) {
                 Text(creator.displayName).font(.title3.bold())
-                Text(creator.displayHandle).foregroundStyle(.appAccent)
+                Text(creator.displayHandle).foregroundStyle(Color.appAccent)
                 if let bio = creator.bio {
                     Text(bio).font(.caption).foregroundStyle(.secondary)
                 }

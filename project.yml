@@ -1,6 +1,8 @@
 name: InTheMoment
 options:
   bundleIdPrefix: com.inthemoment
+  xcodeVersion: "16.0"
+  projectFormat: xcode14_0
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
@@ -23,6 +25,7 @@ targets:
       properties:
         CFBundleDisplayName: In The Moment
         UILaunchScreen: {}
+        UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSPhotoLibraryAddUsageDescription: "Save event photos and videos to your library so you can use them however you like."

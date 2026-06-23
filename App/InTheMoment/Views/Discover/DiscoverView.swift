@@ -100,7 +100,7 @@ private struct EventRow: View {
                     if let creator {
                         Text(creator.displayName)
                         if creator.isVerified {
-                            Image(systemName: "checkmark.seal.fill").foregroundStyle(.appAccent)
+                            Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
                         }
                         Text("·")
                     }

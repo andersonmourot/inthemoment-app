@@ -17,7 +17,7 @@ struct MyEventsView: View {
                         ContentUnavailableViewCompat(
                             title: "Sign in to manage events",
                             systemImage: "person.crop.circle.badge.plus",
-                            message: "Create a creator account to start posting photos and videos from your events."
+                            message: "Create an account to start posting photos and videos from your events."
                         )
                         Button {
                             showingAuth = true

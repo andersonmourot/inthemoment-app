@@ -3,8 +3,8 @@ import Foundation
 import SQLKit
 import Vapor
 
-/// An authenticated account. May own a ``CreatorModel`` profile (creators) or
-/// have none (fans, who can still favorite events and follow creators).
+/// An authenticated account. New accounts own a ``CreatorModel`` profile; the
+/// relationship stays optional so older accounts without a profile can still log in.
 final class UserModel: Model, @unchecked Sendable {
     static let schema = "users"
 
@@ -42,7 +42,7 @@ struct CreateUser: AsyncMigration {
     }
 }
 
-/// Makes `users.creator_id` nullable so fan accounts (no creator profile) can exist.
+/// Makes `users.creator_id` nullable so legacy accounts without a profile can exist.
 /// SQLite can't alter a column's nullability in place, so we rebuild the table,
 /// preserving existing rows. The replacement table is built with Fluent's schema
 /// builder so column storage types match exactly, then swapped in by rename.

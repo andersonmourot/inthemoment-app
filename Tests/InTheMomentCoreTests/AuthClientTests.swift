@@ -76,18 +76,6 @@ final class AuthClientTests: XCTestCase {
         XCTAssertEqual(transport.requests.first?.value(forHTTPHeaderField: "Authorization"), "Bearer mytoken")
     }
 
-    func testRegisterFanReturnsSessionWithoutCreator() async throws {
-        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
-        let payload = try encoder.encode(AuthSession(token: "fan", creator: nil))
-        let transport = MockTransport { _ in (200, payload) }
-        let client = AuthClient(baseURL: baseURL, transport: transport)
-
-        let result = try await client.registerFan(email: "fan@b.com", password: "password123")
-        XCTAssertEqual(result.token, "fan")
-        XCTAssertNil(result.creator)
-        XCTAssertEqual(transport.requests.first?.url?.path, "/auth/register-fan")
-    }
-
     func testAuthenticatedTransportAttachesToken() async throws {
         let inner = MockTransport { _ in (200, Data("[]".utf8)) }
         let transport = AuthenticatedTransport(base: inner) { "thetoken" }

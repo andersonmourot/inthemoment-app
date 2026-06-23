@@ -63,12 +63,12 @@ honors the `ITM_API_BASE_URL` env var so you can point at a local server.
 
 ## Auth model
 
-- Accounts are **creators** (have a `Creator` profile) or **fans** (email + password
-  only). `POST /auth/register` (creator), `POST /auth/register-fan` (fan), and
-  `POST /auth/login` return `{ token, creator? }`; `creator` is null for fans.
-- The JWT carries the user id (`sub`) and an optional `creatorId` (fans have none).
-  Auth responses also include the `userId`/`id` so the app can attribute comments
-  and decide who may delete them (author or the event's owning creator).
+- There is one account type. `POST /auth/register` creates an account with a
+  `Creator` profile; `POST /auth/login` returns `{ token, creator? }`. `creator`
+  is optional only for older accounts that do not have a profile.
+- The JWT carries the user id (`sub`) and an optional `creatorId` for the owned
+  profile. Auth responses also include the `userId`/`id` so the app can attribute
+  comments and decide who may delete them (author or the event's owning creator).
 - Read routes are public; event/creator write routes require a **creator** token and
   enforce ownership (server derives the creator from the token, not the body).
 - Fan favorites/follows sync per-account via `/me/preferences` + `/me/favorites/{id}`
