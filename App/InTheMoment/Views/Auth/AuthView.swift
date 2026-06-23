@@ -43,6 +43,9 @@ struct AuthView: View {
                         TextField("Handle (e.g. aurora_live)", text: $handle)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                        Text("Handle must be 3-30 characters using only lowercase letters, numbers, and underscores.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     } header: {
                         Text("Your profile")
                     } footer: {
