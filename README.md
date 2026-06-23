@@ -12,11 +12,16 @@ that owns its own media collection.
 
 ## Features
 
-- **Discover** — a public feed of published events, with search.
+- **Discover** — a public feed of published events, with search and an All/Following filter.
 - **Event pages** — cover, details, and a grid of photos/videos.
-- **Full-screen viewer** — view photos and play videos, then **Save to your photo library**.
-- **Creator accounts** — sign up / sign in (JWT), then create events and upload media.
-- **Shared backend** — events and uploads are shared across all users via the live API.
+- **Full-screen viewer** — view photos and play videos, then **Save to your photo library** (single or **download-all**).
+- **Creator accounts** — sign up / sign in (JWT), create events, upload media, edit & publish/draft.
+- **Fan accounts** — sign up as a fan (email + password); **favorites** and **follows** sync across devices.
+- **Comments & likes** — fans and creators can like events and post comments (creator/author can delete).
+- **Creator analytics** — per-event **view** and **download** counts on My Events and the event page.
+- **Polished states** — loading skeletons, retry-on-error, and real empty states throughout.
+- **Share / deep links** — `inthemoment://event/<id>` and `https://inthemoment.app/event/<id>`.
+- **Shared backend** — events, accounts, and engagement are shared across all users via the live API.
 
 ## Architecture
 
@@ -29,6 +34,9 @@ Three pieces, all written in Swift:
 │   ├── Models/                   # Creator, Event, MediaItem (Codable DTOs)
 │   ├── Store/                    # EventStore protocol + InMemory/File/API stores + HTTPTransport
 │   ├── Auth/                     # AuthClient, AuthSession, AuthenticatedTransport
+│   ├── Fan/                      # FanPreferencesStore (favorites/follows) + InMemory/File/API
+│   ├── Analytics/                # AnalyticsStore (views/downloads) + EventStats DTO + InMemory/API
+│   ├── Social/                   # SocialStore (comments/likes) + Comment/LikeSummary DTOs + InMemory/API
 │   ├── EventFeed.swift           # Pure search/sort/group helpers
 │   └── SampleData.swift          # Deterministic seed data
 ├── Tests/InTheMomentCoreTests/   # XCTest suite (runs on Linux)
@@ -59,12 +67,23 @@ protocol, so the backend is a one-line injection into `AppModel`. Three implemen
 [`AuthenticatedTransport`](Sources/InTheMomentCore/Auth/AuthenticatedTransport.swift)
 to attach the signed-in creator's bearer token to every mutating request.
 
+The app uses the same protocol-per-concern pattern for the other backends:
+[`FanPreferencesStore`](Sources/InTheMomentCore/Fan/FanPreferencesStore.swift)
+(favorites/follows), [`AnalyticsStore`](Sources/InTheMomentCore/Analytics/AnalyticsStore.swift)
+(views/downloads), and [`SocialStore`](Sources/InTheMomentCore/Social/SocialStore.swift)
+(comments/likes) — each with an in-memory implementation for tests/previews and a
+REST one for production. `AppModel` swaps the fan store between the on-device file
+store (anonymous) and the API store (signed in).
+
 ### Auth
 
-- Register/login returns a **JWT** + the creator profile (`AuthSession`).
+- Accounts are **creators** (have a `Creator` profile, can post events) or **fans**
+  (email + password only; favorites/follows/likes/comments still work).
+- Register/login returns a **JWT**, the user id, and the creator profile (`AuthSession`).
 - The token is stored in the **Keychain** (`TokenHolder`) and restored on launch.
-- **Read** routes are public; **write** routes (`POST/PUT/DELETE` events & media)
-  require a token and enforce that you can only modify your own events.
+- **Read** routes are public; **write** routes require a token. Event/media writes
+  enforce per-creator ownership; comments may be deleted by their author or the
+  event's owning creator.
 
 ## Requirements
 
@@ -103,5 +122,6 @@ swift run InTheMomentServer serve --hostname 127.0.0.1 --port 8080
 flyctl deploy --remote-only --app inthemoment-api
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full developer guide and
-[AGENTS.md](AGENTS.md) for the conventions AI assistants (Cursor, etc.) should follow.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full developer guide,
+[AGENTS.md](AGENTS.md) for the conventions AI assistants (Cursor, etc.) should
+follow, and [ROADMAP.md](ROADMAP.md) for what's shipped and what's next.

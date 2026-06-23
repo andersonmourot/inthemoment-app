@@ -13,8 +13,11 @@ Copilot, Claude, etc.) alike. Keep this short and follow it.
    `MediaItem` are used by *both* the iOS app and the `Server`. Change them in one
    place; never duplicate them. They are plain `Codable`/`Sendable` DTOs — keep
    UIKit/SwiftUI/Vapor out of `Sources/InTheMomentCore`.
-3. **The app talks to data only through the `EventStore` protocol.** Don't call
-   networking from views. Add behavior to a store or to `AppModel`.
+3. **The app talks to data only through protocol abstractions.** `EventStore`
+   (events/media), `FanPreferencesStore` (favorites/follows), `AnalyticsStore`
+   (views/downloads), and `SocialStore` (comments/likes) each have in-memory +
+   REST implementations. Don't call networking from views — add behavior to a
+   store or to `AppModel`.
 4. **Dates are ISO-8601 everywhere.** The app, `APIEventStore`, and the server all
    use `.iso8601` JSON coding. Don't change one side without the others.
 
@@ -48,7 +51,14 @@ APIEventStore(baseURL: AppConfig.apiBaseURL,
               transport: AuthenticatedTransport { TokenHolder.shared.token })
 ```
 
-Swap stores for tests/previews by injecting `AppModel(store:)`. `AppConfig.apiBaseURL`
+The same pattern backs the other concerns: `AnalyticsStore` (`InMemory` +
+`APIAnalyticsStore`) and `SocialStore` (`InMemory` + `APISocialStore`). Recording
+views/downloads is anonymous; reading analytics is creator-only. Likes/comments
+read publicly but require a token to write. `AppModel` swaps the
+`FanPreferencesStore` between `FileFanPreferencesStore` (anonymous) and
+`APIFanPreferencesStore` (signed in) on sign-in/out.
+
+Swap stores for tests/previews by injecting `AppModel(store:…)`. `AppConfig.apiBaseURL`
 honors the `ITM_API_BASE_URL` env var so you can point at a local server.
 
 ## Auth model
@@ -57,6 +67,8 @@ honors the `ITM_API_BASE_URL` env var so you can point at a local server.
   only). `POST /auth/register` (creator), `POST /auth/register-fan` (fan), and
   `POST /auth/login` return `{ token, creator? }`; `creator` is null for fans.
 - The JWT carries the user id (`sub`) and an optional `creatorId` (fans have none).
+  Auth responses also include the `userId`/`id` so the app can attribute comments
+  and decide who may delete them (author or the event's owning creator).
 - Read routes are public; event/creator write routes require a **creator** token and
   enforce ownership (server derives the creator from the token, not the body).
 - Fan favorites/follows sync per-account via `/me/preferences` + `/me/favorites/{id}`
