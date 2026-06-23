@@ -117,6 +117,10 @@ private struct SettingsView: View {
         }
     }
 
+    private var appTheme: AppTheme {
+        AppTheme(rawValue: appThemeRaw) ?? .system
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -148,6 +152,7 @@ private struct SettingsView: View {
                 }
             }
         }
+        .preferredColorScheme(appTheme.colorScheme)
     }
 
     private var appVersion: String {
