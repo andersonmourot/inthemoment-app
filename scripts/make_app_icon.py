@@ -1,112 +1,112 @@
 #!/usr/bin/env python3
 """Generate InTheMoment's app icon (original artwork, no third-party assets).
 
-Design: a camera aperture / iris — a generic geometric form, not trademarked —
-rendered in white over the app's purple brand gradient, with a play triangle in
-the lens opening to signal both photo and video. Rendered at high resolution and
-downscaled for clean, anti-aliased edges.
+Design "Stage Lights": colorful spotlight beams sweeping over a concert crowd
+with confetti — a fun, event-forward mark for a platform built around live
+events. Rendered at high resolution and downscaled for clean, anti-aliased edges
+and saved as a flat RGB PNG (no alpha) for the App Store icon slot.
 """
-import math
-from PIL import Image, ImageDraw
+import os
+import random
+from PIL import Image, ImageDraw, ImageFilter
 
 OUT = "App/InTheMoment/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"
+SS = 4
 FINAL = 1024
-SS = 4               # supersample factor
 S = FINAL * SS
-CX = CY = S / 2
+CX = S / 2
 
-# Brand palette (purple accent used across the app).
-TOP = (139, 92, 246)     # #8B5CF6
-BOTTOM = (76, 29, 149)    # #4C1D95
-WHITE = (255, 255, 255)
+CONFETTI = [(244, 114, 182), (251, 191, 36), (34, 211, 238),
+            (52, 211, 153), (251, 146, 60), (167, 139, 250), (248, 113, 113)]
 
 
 def lerp(a, b, t):
     return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
-def vertical_gradient(size, top, bottom):
-    img = Image.new("RGB", (size, size), top)
-    px = img.load()
-    for y in range(size):
-        c = lerp(top, bottom, y / (size - 1))
-        for x in range(size):
-            px[x, y] = c
-    return img
+def gradient(top, bottom):
+    strip = Image.new("RGB", (1, 512))
+    sp = strip.load()
+    for i in range(512):
+        sp[0, i] = lerp(top, bottom, i / 511)
+    return strip.resize((S, S), Image.BILINEAR).convert("RGBA")
 
 
-def poly(cx, cy, r, n, rot=0.0):
-    return [
-        (cx + r * math.cos(rot + 2 * math.pi * k / n),
-         cy + r * math.sin(rot + 2 * math.pi * k / n))
-        for k in range(n)
-    ]
+def radial_glow(cx, cy, r, color, alpha=255):
+    g = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    ImageDraw.Draw(g).ellipse([cx - r, cy - r, cx + r, cy + r], fill=color + (alpha,))
+    return g.filter(ImageFilter.GaussianBlur(r * 0.5))
 
 
-def main():
-    base = vertical_gradient(S, TOP, BOTTOM).convert("RGBA")
+def confetti(img, rng, n, ymin, ymax, xmin=0.08, xmax=0.92, size=0.022):
+    for _ in range(n):
+        x = rng.uniform(S * xmin, S * xmax)
+        y = rng.uniform(S * ymin, S * ymax)
+        s = S * size * rng.uniform(0.6, 1.4)
+        col = rng.choice(CONFETTI)
+        bit = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+        bd = ImageDraw.Draw(bit)
+        if rng.random() < 0.4:
+            bd.ellipse([x - s / 2, y - s / 2, x + s / 2, y + s / 2], fill=col + (255,))
+        else:
+            bd.rounded_rectangle([x - s / 2, y - s * 0.32, x + s / 2, y + s * 0.32],
+                                 radius=s * 0.15, fill=col + (255,))
+            bit = bit.rotate(rng.uniform(0, 360), center=(x, y), resample=Image.BICUBIC)
+        img.alpha_composite(bit)
 
-    # --- white iris disc with a soft top-down sheen ---
-    R = S * 0.34
-    disc = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    dd = ImageDraw.Draw(disc)
-    dd.ellipse([CX - R, CY - R, CX + R, CY + R], fill=WHITE + (255,))
 
-    sheen = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    sd = sheen.load()
-    for y in range(int(CY - R), int(CY + R) + 1):
-        t = (y - (CY - R)) / (2 * R)
-        a = int(46 * t)  # subtle darkening toward the bottom for depth
-        for x in range(int(CX - R), int(CX + R) + 1):
-            sd[x, y] = (40, 10, 70, a)
-    disc.alpha_composite(Image.composite(
-        sheen, Image.new("RGBA", (S, S), (0, 0, 0, 0)),
-        disc.split()[3]))
+def make():
+    rng = random.Random(7)
+    base = gradient((76, 29, 149), (10, 8, 35))
 
-    # --- aperture blade lines: each tangent to the central hexagon, ---
-    # drawn on their own layer then clipped to the disc so nothing bleeds out.
-    r_hex = S * 0.135
-    rot = -math.pi / 2  # pointy top
-    hexv = poly(CX, CY, r_hex, 6, rot)
-    bladelayer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    bld = ImageDraw.Draw(bladelayer)
-    lw = int(S * 0.011)
-    for k in range(6):
-        ax, ay = hexv[k]
-        bx, by = hexv[(k + 1) % 6]
-        dx, dy = bx - ax, by - ay
-        d = math.hypot(dx, dy)
-        ux, uy = dx / d, dy / d
-        # extend the hexagon edge outward; clipping keeps it inside the lens
-        ex, ey = bx + ux * R * 1.4, by + uy * R * 1.4
-        bld.line([(ax, ay), (ex, ey)], fill=(74, 30, 130, 165), width=lw)
-    discmask = Image.new("L", (S, S), 0)
-    ImageDraw.Draw(discmask).ellipse([CX - R, CY - R, CX + R, CY + R], fill=255)
-    disc.alpha_composite(Image.composite(
-        bladelayer, Image.new("RGBA", (S, S), (0, 0, 0, 0)), discmask))
+    # spotlight beams from two rigs at the top
+    beams = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    rigs = [(S * 0.26, S * 0.10), (S * 0.74, S * 0.10)]
+    cols = [(34, 211, 238), (244, 114, 182), (251, 191, 36)]
+    for (ax, ay) in rigs:
+        for k, col in enumerate(cols):
+            spread = (k - 1) * S * 0.16
+            bx = ax + spread + (S * 0.5 - ax) * 0.5
+            tri = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+            ImageDraw.Draw(tri).polygon(
+                [(ax, ay), (bx - S * 0.09, S * 0.72), (bx + S * 0.09, S * 0.72)],
+                fill=col + (60,))
+            beams.alpha_composite(tri)
+    beams = beams.filter(ImageFilter.GaussianBlur(S * 0.006))
+    base.alpha_composite(beams)
 
-    # punch the hexagon hole so the purple lens opening shows through
-    holemask = Image.new("L", (S, S), 0)
-    ImageDraw.Draw(holemask).polygon(hexv, fill=255)
-    da = disc.split()[3]
-    da = Image.composite(Image.new("L", (S, S), 0), da, holemask)
-    disc.putalpha(da)
+    confetti(base, rng, 26, 0.06, 0.55)
 
-    base.alpha_composite(disc)
+    # light rigs with glow
+    d = ImageDraw.Draw(base)
+    for (ax, ay) in rigs:
+        d.ellipse([ax - S * 0.03, ay - S * 0.03, ax + S * 0.03, ay + S * 0.03],
+                  fill=(255, 255, 240, 255))
+        base.alpha_composite(radial_glow(ax, ay, S * 0.06, (255, 255, 220), 180))
 
-    # --- play triangle in the lens opening (photo + video) ---
-    tri_r = r_hex * 0.62
-    tri = [
-        (CX - tri_r * 0.5, CY - tri_r * 0.86),
-        (CX - tri_r * 0.5, CY + tri_r * 0.86),
-        (CX + tri_r, CY),
-    ]
-    ImageDraw.Draw(base).polygon(tri, fill=WHITE + (255,))
+    # stage + crowd silhouette
+    d = ImageDraw.Draw(base)
+    d.rectangle([0, S * 0.80, S, S], fill=(8, 6, 24, 255))
+    d.rounded_rectangle([S * 0.10, S * 0.76, S * 0.90, S * 0.82], radius=S * 0.02,
+                        fill=(20, 14, 50, 255))
+    crowd = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    cd = ImageDraw.Draw(crowd)
+    for i, xf in enumerate([0.18, 0.31, 0.44, 0.57, 0.70, 0.83]):
+        hx = S * xf
+        hy = S * (0.80 - (0.01 if i % 2 else 0.0))
+        cd.ellipse([hx - S * 0.045, hy - S * 0.045, hx + S * 0.045, hy + S * 0.045],
+                   fill=(4, 3, 14, 255))
+        cd.line([(hx - S * 0.03, hy), (hx - S * 0.06, hy - S * 0.10)],
+                fill=(4, 3, 14, 255), width=int(S * 0.018))
+        cd.line([(hx + S * 0.03, hy), (hx + S * 0.06, hy - S * 0.10)],
+                fill=(4, 3, 14, 255), width=int(S * 0.018))
+    base.alpha_composite(crowd)
 
     out = base.convert("RGB").resize((FINAL, FINAL), Image.LANCZOS)
+    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     out.save(OUT)
-    print("wrote", OUT, out.size)
+    print("wrote", OUT, out.size, out.mode)
 
 
 if __name__ == "__main__":
-    main()
+    make()
