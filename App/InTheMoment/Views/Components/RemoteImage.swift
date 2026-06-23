@@ -15,10 +15,9 @@ struct RemoteImage: View {
             case .failure:
                 placeholder(systemImage: "photo")
             case .empty:
-                ZStack {
-                    placeholder(systemImage: "photo")
-                    ProgressView()
-                }
+                Rectangle()
+                    .fill(.quaternary)
+                    .shimmering()
             @unknown default:
                 placeholder(systemImage: "photo")
             }

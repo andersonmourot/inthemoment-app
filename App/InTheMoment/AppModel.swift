@@ -13,6 +13,12 @@ final class AppModel: ObservableObject {
     /// Events owned by the current creator, including unpublished drafts.
     @Published private(set) var myEventsList: [Event] = []
     @Published private(set) var isLoading = false
+    /// Whether the first load attempt has completed (used to distinguish the
+    /// initial loading state from a genuinely empty feed).
+    @Published private(set) var hasLoaded = false
+    /// Set when loading the feed fails; surfaced inline with a Retry action.
+    @Published private(set) var loadError: String?
+    /// Set when a one-off action (create/update/delete) fails; surfaced as an alert.
     @Published var errorMessage: String?
 
     /// The creator currently acting in "creator mode" (the signed-in account),
@@ -78,7 +84,8 @@ final class AppModel: ObservableObject {
 
     func refresh() async {
         isLoading = true
-        defer { isLoading = false }
+        loadError = nil
+        defer { isLoading = false; hasLoaded = true }
         do {
             async let published = store.publishedEvents()
             async let people = store.allCreators()
@@ -90,7 +97,7 @@ final class AppModel: ObservableObject {
                 self.myEventsList = []
             }
         } catch {
-            errorMessage = error.localizedDescription
+            loadError = error.localizedDescription
         }
     }
 
@@ -183,15 +190,19 @@ final class AppModel: ObservableObject {
 
     func toggleFavorite(_ eventID: UUID) async {
         let newValue = !fanPrefs.isFavorite(eventID)
-        if let updated = try? await fanStore.setFavorite(eventID: eventID, newValue) {
-            fanPrefs = updated
+        do {
+            fanPrefs = try await fanStore.setFavorite(eventID: eventID, newValue)
+        } catch {
+            errorMessage = "Couldn't \(newValue ? "save" : "remove") this favorite. Please try again."
         }
     }
 
     func toggleFollow(_ creatorID: UUID) async {
         let newValue = !fanPrefs.isFollowing(creatorID)
-        if let updated = try? await fanStore.setFollowing(creatorID: creatorID, newValue) {
-            fanPrefs = updated
+        do {
+            fanPrefs = try await fanStore.setFollowing(creatorID: creatorID, newValue)
+        } catch {
+            errorMessage = "Couldn't \(newValue ? "follow" : "unfollow") right now. Please try again."
         }
     }
 

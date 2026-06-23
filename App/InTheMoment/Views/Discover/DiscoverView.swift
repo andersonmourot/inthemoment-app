@@ -16,14 +16,13 @@ struct DiscoverView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if model.events.isEmpty {
-                    ContentUnavailableViewCompat(
-                        title: "No events yet",
-                        systemImage: "sparkles",
-                        message: "Published events from creators will show up here."
-                    )
-                } else {
+            AsyncContentView(
+                isLoading: model.isLoading,
+                hasLoaded: model.hasLoaded,
+                isEmpty: model.events.isEmpty,
+                errorMessage: model.loadError,
+                retry: { await model.refresh() }
+            ) {
                     List {
                         if !model.followedCreators.isEmpty {
                             Picker("Filter", selection: $filter) {
@@ -47,7 +46,12 @@ struct DiscoverView: View {
                         }
                     }
                     .listStyle(.plain)
-                }
+            } empty: {
+                ContentUnavailableViewCompat(
+                    title: "No events yet",
+                    systemImage: "sparkles",
+                    message: "Published events from creators will show up here."
+                )
             }
             .navigationTitle("In The Moment")
             .navigationDestination(for: UUID.self) { id in

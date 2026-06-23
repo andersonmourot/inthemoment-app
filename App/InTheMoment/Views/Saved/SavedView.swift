@@ -11,13 +11,13 @@ struct SavedView: View {
             Group {
                 let favorites = model.favoriteEvents
                 let following = model.followedCreators
-                if favorites.isEmpty && following.isEmpty {
-                    ContentUnavailableViewCompat(
-                        title: "Nothing saved yet",
-                        systemImage: "heart",
-                        message: "Tap the heart on an event to favorite it, or follow creators to see their work here."
-                    )
-                } else {
+                AsyncContentView(
+                    isLoading: model.isLoading,
+                    hasLoaded: model.hasLoaded,
+                    isEmpty: favorites.isEmpty && following.isEmpty,
+                    errorMessage: model.loadError,
+                    retry: { await model.refresh() }
+                ) {
                     List {
                         if !model.isAccountSignedIn {
                             Section {
@@ -63,6 +63,12 @@ struct SavedView: View {
                             }
                         }
                     }
+                } empty: {
+                    ContentUnavailableViewCompat(
+                        title: "Nothing saved yet",
+                        systemImage: "heart",
+                        message: "Tap the heart on an event to favorite it, or follow creators to see their work here."
+                    )
                 }
             }
             .navigationTitle("Saved")
