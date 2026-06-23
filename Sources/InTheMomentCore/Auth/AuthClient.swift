@@ -3,8 +3,8 @@ import Foundation
 import FoundationNetworking
 #endif
 
-/// The result of a successful authentication: a bearer token and, for creator
-/// accounts, the signed-in creator profile (`nil` for fan accounts).
+/// The result of a successful authentication: a bearer token plus the signed-in
+/// profile. Older accounts may not have a creator profile.
 public struct AuthSession: Codable, Sendable, Equatable {
     public let token: String
     public let creator: Creator?
@@ -18,7 +18,7 @@ public struct AuthSession: Codable, Sendable, Equatable {
     }
 }
 
-/// The signed-in account, as returned by `/auth/me`. A fan account has no creator.
+/// The signed-in account, as returned by `/auth/me`.
 public struct Account: Codable, Sendable, Equatable {
     /// The user's account id (nil for older server responses).
     public let id: UUID?
@@ -63,18 +63,8 @@ public actor AuthClient {
         let password: String
     }
 
-    private struct FanRegisterBody: Encodable {
-        let email: String
-        let password: String
-    }
-
     public func register(email: String, password: String, displayName: String, handle: String) async throws -> AuthSession {
         try await post("auth/register", body: RegisterBody(email: email, password: password, displayName: displayName, handle: handle))
-    }
-
-    /// Registers a fan account (email + password only, no creator profile).
-    public func registerFan(email: String, password: String) async throws -> AuthSession {
-        try await post("auth/register-fan", body: FanRegisterBody(email: email, password: password))
     }
 
     public func login(email: String, password: String) async throws -> AuthSession {

@@ -15,9 +15,9 @@ that owns its own media collection.
 - **Discover** — a public feed of published events, with search and an All/Following filter.
 - **Event pages** — cover, details, and a grid of photos/videos.
 - **Full-screen viewer** — view photos and play videos, then **Save to your photo library** (single or **download-all**).
-- **Creator accounts** — sign up / sign in (JWT), create events, upload media, edit & publish/draft.
-- **Fan accounts** — sign up as a fan (email + password); **favorites** and **follows** sync across devices.
-- **Comments & likes** — fans and creators can like events and post comments (creator/author can delete).
+- **Accounts** — sign up / sign in (JWT), create events, upload media, edit & publish/draft.
+- **Saved preferences** — **favorites** and **follows** sync across devices for signed-in accounts.
+- **Comments & likes** — signed-in accounts can like events and post comments (creator/author can delete).
 - **Creator analytics** — per-event **view** and **download** counts on My Events and the event page.
 - **Polished states** — loading skeletons, retry-on-error, and real empty states throughout.
 - **Share / deep links** — `inthemoment://event/<id>` and `https://inthemoment.app/event/<id>`.
@@ -77,9 +77,9 @@ store (anonymous) and the API store (signed in).
 
 ### Auth
 
-- Accounts are **creators** (have a `Creator` profile, can post events) or **fans**
-  (email + password only; favorites/follows/likes/comments still work).
-- Register/login returns a **JWT**, the user id, and the creator profile (`AuthSession`).
+- Accounts have a `Creator` profile for posting events, and the same account also
+  favorites, follows, likes, and comments.
+- Register/login returns a **JWT**, the user id, and the profile (`AuthSession`).
 - The token is stored in the **Keychain** (`TokenHolder`) and restored on launch.
 - **Read** routes are public; **write** routes require a token. Event/media writes
   enforce per-creator ownership; comments may be deleted by their author or the

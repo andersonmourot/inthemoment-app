@@ -4,8 +4,8 @@ import InTheMomentCore
 /// Manages sign-in state: talks to the backend's `/auth` endpoints via
 /// ``AuthClient`` and persists the bearer token through ``TokenHolder``.
 ///
-/// An account is either a *creator* (has a ``Creator`` profile and can post events)
-/// or a *fan* (email + password only; favorites/follows sync to the account).
+/// Signed-in accounts have a profile for posting events, and favorites/follows
+/// sync to the account.
 @MainActor
 final class AuthService: ObservableObject {
     @Published private(set) var account: Account?
@@ -13,7 +13,7 @@ final class AuthService: ObservableObject {
     @Published var errorMessage: String?
 
     var isAuthenticated: Bool { account != nil }
-    /// The signed-in creator profile, or `nil` for fan / anonymous sessions.
+    /// The signed-in profile, or `nil` for anonymous / legacy sessions.
     var signedInCreator: Creator? { account?.creator }
 
     private let client: AuthClient
@@ -39,13 +39,6 @@ final class AuthService: ObservableObject {
     func register(email: String, password: String, displayName: String, handle: String) async -> Account? {
         await run(email: email) {
             try await self.client.register(email: email, password: password, displayName: displayName, handle: handle)
-        }
-    }
-
-    /// Registers a fan account (email + password only).
-    func registerFan(email: String, password: String) async -> Account? {
-        await run(email: email) {
-            try await self.client.registerFan(email: email, password: password)
         }
     }
 

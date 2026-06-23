@@ -21,20 +21,20 @@ final class AppModel: ObservableObject {
     /// Set when a one-off action (create/update/delete) fails; surfaced as an alert.
     @Published var errorMessage: String?
 
-    /// The creator currently acting in "creator mode" (the signed-in account),
-    /// or `nil` when browsing as an anonymous viewer or a fan.
+    /// The profile currently acting in "creator mode" (the signed-in account),
+    /// or `nil` when browsing as an anonymous viewer or a legacy account.
     @Published var currentCreator: Creator?
 
-    /// The email of the signed-in account (creator or fan), or `nil` if anonymous.
+    /// The email of the signed-in account, or `nil` if anonymous.
     @Published private(set) var signedInEmail: String?
 
     /// The signed-in user's account id, used to authorize comment deletion.
     @Published private(set) var signedInUserID: UUID?
 
-    /// Whether a creator is signed in (creator-only features are gated on this).
+    /// Whether the signed-in account has a profile that can manage events.
     var isSignedIn: Bool { currentCreator != nil }
 
-    /// Whether any account (creator or fan) is signed in.
+    /// Whether any account is signed in.
     var isAccountSignedIn: Bool { signedInEmail != nil }
 
     /// Event to present when the app is opened via a deep link.

@@ -16,9 +16,9 @@ conventions, and [CONTRIBUTING.md](CONTRIBUTING.md) for build/deploy/REST detail
 | Persistence | `FileEventStore` (on-device JSON), edit + publish/draft, share/deep links | core + app |
 | REST client | `APIEventStore` over an injectable `HTTPTransport` | core |
 | Backend | Vapor + Fluent + SQLite, full event/media CRUD, deployed to Fly.io | `Server/` |
-| Creator auth | JWT + bcrypt, Keychain token, per-creator ownership on writes | core + app + server |
+| Account auth | JWT + bcrypt, Keychain token, profile-owned writes | core + app + server |
 | Fan features | Favorites, follow creators, download-all, Saved tab, All/Following filter | core + app |
-| Fan accounts | Fan sign-up, server-synced favorites/follows, on-device↔API store swap | core + app + server |
+| Unified accounts | One sign-up flow with a profile plus server-synced favorites/follows | core + app + server |
 | UI polish | `AsyncContentView` loading/error/empty states, shimmer, global action alert | app |
 | Analytics | Per-event view/download counts; `AnalyticsStore` + creator-only read endpoints | core + app + server |
 | Comments & likes | `SocialStore`, comment threads + like button, author/owner delete | core + app + server |

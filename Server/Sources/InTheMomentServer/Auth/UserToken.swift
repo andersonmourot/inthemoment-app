@@ -7,7 +7,7 @@ struct UserToken: Content, Authenticatable, JWTPayload {
     var sub: SubjectClaim
     /// Expiration time.
     var exp: ExpirationClaim
-    /// The creator profile this user owns, if any (fans have no creator profile).
+    /// The creator profile this user owns, if any (nil only for legacy accounts).
     var creatorId: UUID?
 
     func verify(using algorithm: some JWTAlgorithm) async throws {
@@ -22,9 +22,9 @@ struct UserToken: Content, Authenticatable, JWTPayload {
         return userId
     }
 
-    /// The creator id for creator-only actions; 403 for fan accounts.
+    /// The creator id for profile-owned actions.
     func requireCreatorID() throws -> UUID {
-        guard let creatorId else { throw Abort(.forbidden, reason: "This action requires a creator account.") }
+        guard let creatorId else { throw Abort(.forbidden, reason: "This action requires a profile.") }
         return creatorId
     }
 

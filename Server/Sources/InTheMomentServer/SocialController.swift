@@ -125,8 +125,8 @@ struct SocialController: RouteCollection {
         return LikeSummary(eventID: eventId, count: count, likedByViewer: liked)
     }
 
-    /// The display name to attribute a comment to: the creator's display name for
-    /// creator accounts, otherwise the local part of the fan's email.
+    /// The display name to attribute a comment to: the profile display name when
+    /// present, otherwise the local part of the account email.
     private static func authorName(for userId: UUID, on db: Database) async throws -> String {
         guard let user = try await UserModel.find(userId, on: db) else { throw Abort(.notFound) }
         if let creatorId = user.creatorId, let creator = try await CreatorModel.find(creatorId, on: db) {
