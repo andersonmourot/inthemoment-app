@@ -26,23 +26,31 @@ struct MyEventsView: View {
                         }
                         .buttonStyle(.borderedProminent)
                     }
-                } else if mine.isEmpty {
-                    ContentUnavailableViewCompat(
-                        title: "No events yet",
-                        systemImage: "rectangle.stack.badge.plus",
-                        message: "Create an event page to start posting photos and videos."
-                    )
                 } else {
-                    List {
-                        ForEach(mine) { event in
-                            NavigationLink(value: event.id) {
-                                MyEventRow(event: event)
+                    AsyncContentView(
+                        isLoading: model.isLoading,
+                        hasLoaded: model.hasLoaded,
+                        isEmpty: mine.isEmpty,
+                        errorMessage: model.loadError,
+                        retry: { await model.refresh() }
+                    ) {
+                        List {
+                            ForEach(mine) { event in
+                                NavigationLink(value: event.id) {
+                                    MyEventRow(event: event)
+                                }
+                            }
+                            .onDelete { offsets in
+                                let ids = offsets.map { mine[$0].id }
+                                Task { for id in ids { await model.deleteEvent(id) } }
                             }
                         }
-                        .onDelete { offsets in
-                            let ids = offsets.map { mine[$0].id }
-                            Task { for id in ids { await model.deleteEvent(id) } }
-                        }
+                    } empty: {
+                        ContentUnavailableViewCompat(
+                            title: "No events yet",
+                            systemImage: "rectangle.stack.badge.plus",
+                            message: "Create an event page to start posting photos and videos."
+                        )
                     }
                 }
             }

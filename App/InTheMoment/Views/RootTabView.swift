@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RootTabView: View {
+    @EnvironmentObject private var model: AppModel
+
     var body: some View {
         TabView {
             DiscoverView()
@@ -14,6 +16,17 @@ struct RootTabView: View {
 
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.crop.circle") }
+        }
+        .alert(
+            "Something went wrong",
+            isPresented: Binding(
+                get: { model.errorMessage != nil },
+                set: { if !$0 { model.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { model.errorMessage = nil }
+        } message: {
+            Text(model.errorMessage ?? "")
         }
     }
 }

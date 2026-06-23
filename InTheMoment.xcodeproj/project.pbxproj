@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04F09F1645FCA11F385B05A6 /* StateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 602B65177A363C53AD91A495 /* StateViews.swift */; };
 		088325F4B8290D1BFEBCF3B7 /* AddMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB47E7E728B76DBBBBBB9A6E /* AddMediaView.swift */; };
 		15A9DB7B71ED262083E59E56 /* MediaStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2F79D5798C35D8E8B7B2E32 /* MediaStorage.swift */; };
 		185278575EE8F9F4E1A52953 /* EditEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDECA4A6A92ACAC9526AB08 /* EditEventView.swift */; };
@@ -44,6 +45,7 @@
 		34A83BC1A57A3979C2BFF8BF /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		3FEDDAEA7025E3A344780DEB /* ContentUnavailableViewCompat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentUnavailableViewCompat.swift; sourceTree = "<group>"; };
 		467EC698C312D14C6578CA2B /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		602B65177A363C53AD91A495 /* StateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateViews.swift; sourceTree = "<group>"; };
 		640FCDA751E26FC0E14B7E39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		71F38CFEE702E3E79AB67DF0 /* InTheMomentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InTheMomentApp.swift; sourceTree = "<group>"; };
 		82767A536B5865B775F3AFEA /* InTheMoment.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = InTheMoment.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -192,6 +194,7 @@
 			children = (
 				3FEDDAEA7025E3A344780DEB /* ContentUnavailableViewCompat.swift */,
 				C3465A93144DF379E6615704 /* RemoteImage.swift */,
+				602B65177A363C53AD91A495 /* StateViews.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -310,6 +313,7 @@
 				F0A682B2E1B23012B77B81F8 /* RemoteImage.swift in Sources */,
 				A7F3E840DBADEE01105D6547 /* RootTabView.swift in Sources */,
 				5B2E20E06C4ED14145E3BBAE /* SavedView.swift in Sources */,
+				04F09F1645FCA11F385B05A6 /* StateViews.swift in Sources */,
 				5FB94CA6944C9A96A33E7C27 /* Theme.swift in Sources */,
 				7FE55D201B093AFEB2AD51F1 /* TokenHolder.swift in Sources */,
 			);
