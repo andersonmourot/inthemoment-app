@@ -28,6 +28,9 @@ final class AppModel: ObservableObject {
     /// The email of the signed-in account (creator or fan), or `nil` if anonymous.
     @Published private(set) var signedInEmail: String?
 
+    /// The signed-in user's account id, used to authorize comment deletion.
+    @Published private(set) var signedInUserID: UUID?
+
     /// Whether a creator is signed in (creator-only features are gated on this).
     var isSignedIn: Bool { currentCreator != nil }
 
@@ -48,16 +51,19 @@ final class AppModel: ObservableObject {
     /// (signed in) so favorites/follows sync to the account when logged in.
     private var fanStore: FanPreferencesStore
     private let analyticsStore: AnalyticsStore
+    private let socialStore: SocialStore
 
     init(
         store: EventStore? = nil,
         fanStore: FanPreferencesStore? = nil,
         analyticsStore: AnalyticsStore? = nil,
+        socialStore: SocialStore? = nil,
         currentCreator: Creator? = nil
     ) {
         self.store = store ?? AppModel.makeDefaultStore()
         self.fanStore = fanStore ?? AppModel.makeDefaultFanStore()
         self.analyticsStore = analyticsStore ?? AppModel.makeDefaultAnalyticsStore()
+        self.socialStore = socialStore ?? AppModel.makeDefaultSocialStore()
         self.currentCreator = currentCreator
     }
 
@@ -85,12 +91,18 @@ final class AppModel: ObservableObject {
         return APIAnalyticsStore(baseURL: AppConfig.apiBaseURL, transport: transport)
     }
 
+    private static func makeDefaultSocialStore() -> SocialStore {
+        let transport = AuthenticatedTransport { TokenHolder.shared.token }
+        return APISocialStore(baseURL: AppConfig.apiBaseURL, transport: transport)
+    }
+
     /// Loads initial data. When restoring a signed-in `account`, switches to the
     /// account-backed fan store so favorites/follows come from the server.
     func bootstrap(account: Account? = nil) async {
         if let account {
             currentCreator = account.creator
             signedInEmail = account.email
+            signedInUserID = account.id
             fanStore = AppModel.makeAPIFanStore()
         }
         fanPrefs = (try? await fanStore.preferences()) ?? FanPreferences()
@@ -207,6 +219,7 @@ final class AppModel: ObservableObject {
         let local = (try? await fanStore.preferences()) ?? fanPrefs
         currentCreator = account.creator
         signedInEmail = account.email
+        signedInUserID = account.id
         let api = AppModel.makeAPIFanStore()
         fanStore = api
         if let merged = try? await api.merge(local) {
@@ -222,6 +235,7 @@ final class AppModel: ObservableObject {
     func didSignOut() async {
         currentCreator = nil
         signedInEmail = nil
+        signedInUserID = nil
         myEventsList = []
         fanStore = AppModel.makeDefaultFanStore()
         fanPrefs = (try? await fanStore.preferences()) ?? FanPreferences()
@@ -264,6 +278,56 @@ final class AppModel: ObservableObject {
     /// Published events from creators the fan follows, newest first.
     var followedEvents: [Event] {
         EventFeed.sortedByDate(EventFeed.events(events, byCreators: fanPrefs.followedCreatorIDs))
+    }
+
+    // MARK: Social (comments & likes)
+
+    /// Loads the comments for an event, oldest first.
+    func comments(forEvent eventID: UUID) async -> [Comment] {
+        (try? await socialStore.comments(forEvent: eventID)) ?? []
+    }
+
+    /// Posts a comment; returns the created comment, or nil on failure.
+    func addComment(eventID: UUID, body: String) async -> Comment? {
+        do {
+            return try await socialStore.addComment(eventID: eventID, body: body)
+        } catch {
+            errorMessage = "Couldn't post your comment. Please try again."
+            return nil
+        }
+    }
+
+    /// Deletes a comment. The server enforces author/owner authorization.
+    func deleteComment(_ comment: Comment) async -> Bool {
+        do {
+            try await socialStore.deleteComment(id: comment.id, eventID: comment.eventID)
+            return true
+        } catch {
+            errorMessage = "Couldn't delete this comment. Please try again."
+            return false
+        }
+    }
+
+    /// Whether the current account may delete `comment` (its author, or the
+    /// owning creator of `event`).
+    func canDelete(_ comment: Comment, in event: Event) -> Bool {
+        if let userID = signedInUserID, comment.authorID == userID { return true }
+        if let creator = currentCreator, creator.id == event.creatorId { return true }
+        return false
+    }
+
+    func likeSummary(forEvent eventID: UUID) async -> LikeSummary {
+        (try? await socialStore.likeSummary(forEvent: eventID)) ?? LikeSummary(eventID: eventID)
+    }
+
+    /// Toggles the viewer's like; returns the updated summary, or nil on failure.
+    func setLike(eventID: UUID, _ liked: Bool) async -> LikeSummary? {
+        do {
+            return try await socialStore.setLike(eventID: eventID, liked)
+        } catch {
+            errorMessage = "Couldn't update your like. Please try again."
+            return nil
+        }
     }
 
     private func perform(_ action: @escaping () async throws -> Void) async {

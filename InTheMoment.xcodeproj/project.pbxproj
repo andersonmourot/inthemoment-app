@@ -34,6 +34,7 @@
 		F2F5B5E2C074C0FCB5C03672 /* ContentUnavailableViewCompat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FEDDAEA7025E3A344780DEB /* ContentUnavailableViewCompat.swift */; };
 		F4555B63014DB0528A3A6265 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E515F91AFBC93E6EF0DFFBB /* Assets.xcassets */; };
 		F49B5F517442387FD3D94A6E /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C6863958425A02FEC0ECEB /* AppConfig.swift */; };
+		FCA2087D61EE97427DC8C14D /* CommentsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECBED565D3DA7C036BCDAB13 /* CommentsSection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +66,7 @@
 		E2F79D5798C35D8E8B7B2E32 /* MediaStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaStorage.swift; sourceTree = "<group>"; };
 		E45735CBE3370FCB5A5858FD /* SavedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedView.swift; sourceTree = "<group>"; };
 		E8C3EB1A15D8792E9EF0DB86 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		ECBED565D3DA7C036BCDAB13 /* CommentsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsSection.swift; sourceTree = "<group>"; };
 		F7381D0E26B62B02E4560FC0 /* CreateEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateEventView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -106,6 +108,7 @@
 		3D4457F8B5088EC9E0A5ECA4 /* Event */ = {
 			isa = PBXGroup;
 			children = (
+				ECBED565D3DA7C036BCDAB13 /* CommentsSection.swift */,
 				8BA0F53027D9BA96BDA23918 /* EventDetailView.swift */,
 				DD0CB5FA0C3205CFC5B1E4E5 /* MediaDetailView.swift */,
 				9521F5C49316F72399A455C0 /* MediaGridView.swift */,
@@ -296,6 +299,7 @@
 				7CA33BE24D7F6B7396CA53BC /* AppModel.swift in Sources */,
 				5D0FCE5473DFCA7BAE1F90CA /* AuthService.swift in Sources */,
 				348B302AD4AB0DDFF25B93C9 /* AuthView.swift in Sources */,
+				FCA2087D61EE97427DC8C14D /* CommentsSection.swift in Sources */,
 				F2F5B5E2C074C0FCB5C03672 /* ContentUnavailableViewCompat.swift in Sources */,
 				BF0F38E542782DBE6AB343CC /* CreateEventView.swift in Sources */,
 				D61A56B3AE42E33FA3717F4A /* CreatorEventDetailView.swift in Sources */,

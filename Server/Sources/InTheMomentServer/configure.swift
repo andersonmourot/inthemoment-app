@@ -28,6 +28,8 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateFavorite())
     app.migrations.add(CreateFollow())
     app.migrations.add(CreateEventStats())
+    app.migrations.add(CreateComment())
+    app.migrations.add(CreateEventLike())
     try await app.autoMigrate()
 
     try await seedIfEmpty(app)

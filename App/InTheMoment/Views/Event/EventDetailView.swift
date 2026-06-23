@@ -8,6 +8,8 @@ struct EventDetailView: View {
     @State private var selectedMedia: MediaItem?
     @State private var isDownloadingAll = false
     @State private var downloadMessage: String?
+    @State private var likeSummary: LikeSummary?
+    @State private var isTogglingLike = false
 
     /// Always read the freshest copy from the model so newly added media appears.
     private var liveEvent: Event { model.event(id: event.id) ?? event }
@@ -44,6 +46,8 @@ struct EventDetailView: View {
                     }
                 }
 
+                likeRow
+
                 if liveEvent.downloadableCount > 0 {
                     Button {
                         downloadAll()
@@ -70,12 +74,19 @@ struct EventDetailView: View {
                 } else {
                     MediaGridView(media: liveEvent.media) { selectedMedia = $0 }
                 }
+
+                Divider()
+
+                CommentsSection(event: liveEvent)
             }
             .padding()
         }
         .navigationTitle(liveEvent.title)
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: liveEvent.id) { await model.recordView(liveEvent.id) }
+        .task(id: liveEvent.id) {
+            await model.recordView(liveEvent.id)
+            likeSummary = await model.likeSummary(forEvent: liveEvent.id)
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -108,6 +119,31 @@ struct EventDetailView: View {
             Button("OK", role: .cancel) { downloadMessage = nil }
         } message: {
             Text(downloadMessage ?? "")
+        }
+    }
+
+    private var likeRow: some View {
+        let summary = likeSummary ?? LikeSummary(eventID: liveEvent.id)
+        let liked = summary.likedByViewer
+        return Button {
+            toggleLike(currentlyLiked: liked)
+        } label: {
+            Label("\(summary.count)", systemImage: liked ? "hand.thumbsup.fill" : "hand.thumbsup")
+                .font(.subheadline.weight(.semibold))
+        }
+        .buttonStyle(.bordered)
+        .tint(liked ? .appAccent : .secondary)
+        .disabled(isTogglingLike || !model.isAccountSignedIn)
+        .accessibilityLabel(liked ? "Unlike" : "Like")
+    }
+
+    private func toggleLike(currentlyLiked: Bool) {
+        isTogglingLike = true
+        Task {
+            defer { isTogglingLike = false }
+            if let updated = await model.setLike(eventID: liveEvent.id, !currentlyLiked) {
+                likeSummary = updated
+            }
         }
     }
 
