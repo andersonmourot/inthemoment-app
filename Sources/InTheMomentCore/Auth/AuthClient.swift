@@ -63,12 +63,28 @@ public actor AuthClient {
         let password: String
     }
 
+    private struct ProfileBody: Encodable {
+        let displayName: String
+        let handle: String
+    }
+
     public func register(email: String, password: String, displayName: String, handle: String) async throws -> AuthSession {
         try await post("auth/register", body: RegisterBody(email: email, password: password, displayName: displayName, handle: handle))
     }
 
     public func login(email: String, password: String) async throws -> AuthSession {
         try await post("auth/login", body: LoginBody(email: email, password: password))
+    }
+
+    public func completeProfile(token: String, displayName: String, handle: String) async throws -> AuthSession {
+        var request = URLRequest(url: baseURL.appendingPathComponent("auth/profile"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.httpBody = try encoder.encode(ProfileBody(displayName: displayName, handle: handle))
+        let (data, http) = try await transport.send(request)
+        try validate(http, data: data)
+        return try decoder.decode(AuthSession.self, from: data)
     }
 
     public func me(token: String) async throws -> Account {

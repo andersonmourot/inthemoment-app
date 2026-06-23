@@ -48,6 +48,16 @@ final class AuthService: ObservableObject {
         }
     }
 
+    func completeProfile(displayName: String, handle: String) async -> Account? {
+        guard let token = TokenHolder.shared.token, let email = account?.email else {
+            errorMessage = "Please sign in again."
+            return nil
+        }
+        return await run(email: email) {
+            try await self.client.completeProfile(token: token, displayName: displayName, handle: handle)
+        }
+    }
+
     func logout() {
         TokenHolder.shared.set(nil)
         account = nil

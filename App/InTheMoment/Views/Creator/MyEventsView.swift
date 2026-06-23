@@ -7,12 +7,13 @@ struct MyEventsView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showingCreate = false
     @State private var showingAuth = false
+    @State private var showingProfileSetup = false
 
     var body: some View {
         NavigationStack {
             Group {
                 let mine = model.myEvents()
-                if !model.isSignedIn {
+                if !model.isAccountSignedIn {
                     VStack(spacing: 16) {
                         ContentUnavailableViewCompat(
                             title: "Sign in to manage events",
@@ -23,6 +24,20 @@ struct MyEventsView: View {
                             showingAuth = true
                         } label: {
                             Text("Sign In / Create Account").bold()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                } else if !model.isSignedIn {
+                    VStack(spacing: 16) {
+                        ContentUnavailableViewCompat(
+                            title: "Complete your profile",
+                            systemImage: "person.text.rectangle",
+                            message: "Add a display name and handle to start posting photos and videos from your events."
+                        )
+                        Button {
+                            showingProfileSetup = true
+                        } label: {
+                            Text("Complete Profile").bold()
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -74,6 +89,76 @@ struct MyEventsView: View {
             }
             .sheet(isPresented: $showingAuth) {
                 AuthView()
+            }
+            .sheet(isPresented: $showingProfileSetup) {
+                CompleteProfileView()
+            }
+        }
+    }
+}
+
+private struct CompleteProfileView: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var auth: AuthService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var displayName = ""
+    @State private var handle = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Display name", text: $displayName)
+                    TextField("Handle (e.g. aurora_live)", text: $handle)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } header: {
+                    EmptyView()
+                } footer: {
+                    Text("This profile lets your signed-in account create and manage events.")
+                }
+
+                if let error = auth.errorMessage {
+                    Section {
+                        Text(error).foregroundStyle(.red).font(.footnote)
+                    }
+                }
+
+                Section {
+                    Button(action: submit) {
+                        HStack {
+                            Spacer()
+                            if auth.isWorking {
+                                ProgressView()
+                            } else {
+                                Text("Save Profile").bold()
+                            }
+                            Spacer()
+                        }
+                    }
+                    .disabled(auth.isWorking || !isValid)
+                }
+            }
+            .navigationTitle("Complete Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var isValid: Bool {
+        !displayName.trimmingCharacters(in: .whitespaces).isEmpty && Creator.isValidHandle(handle)
+    }
+
+    private func submit() {
+        Task {
+            if let account = await auth.completeProfile(displayName: displayName, handle: handle) {
+                await model.didSignIn(account)
+                dismiss()
             }
         }
     }

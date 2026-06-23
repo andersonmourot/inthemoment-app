@@ -66,6 +66,7 @@ continue to decode.
 | `POST` | `/auth/register` | `{ email, password, displayName, handle }` | `{ token, userId, creator }` |
 | `POST` | `/auth/login` | `{ email, password }` | `{ token, userId, creator? }` |
 | `GET` | `/auth/me` | — (Bearer token) | `{ id, email, creator? }` |
+| `POST` | `/auth/profile` | `{ displayName, handle }` (Bearer token) | `{ token, userId, creator }` |
 
 ### Fan preferences (favorites & follows)
 

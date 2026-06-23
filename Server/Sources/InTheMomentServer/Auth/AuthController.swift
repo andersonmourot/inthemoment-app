@@ -15,6 +15,11 @@ struct LoginRequest: Content {
     let password: String
 }
 
+struct ProfileRequest: Content {
+    let displayName: String
+    let handle: String
+}
+
 /// Returned on register/login. `creator` is nil only for older accounts without a profile.
 struct AuthResponse: Content {
     let token: String
@@ -37,6 +42,7 @@ struct AuthController: RouteCollection {
 
         let protected = auth.grouped(UserToken.authenticator(), UserToken.guardMiddleware())
         protected.get("me", use: me)
+        protected.post("profile", use: completeProfile)
     }
 
     func register(req: Request) async throws -> AuthResponse {
@@ -93,6 +99,35 @@ struct AuthController: RouteCollection {
         guard let user = try await UserModel.find(userId, on: req.db) else { throw Abort(.notFound) }
         let creator = try await Self.creator(for: user, on: req.db)
         return AccountResponse(id: userId, email: user.email, creator: creator)
+    }
+
+    func completeProfile(req: Request) async throws -> AuthResponse {
+        let token = try req.auth.require(UserToken.self)
+        let userId = try token.requireUserID()
+        let body = try req.content.decode(ProfileRequest.self)
+        guard let user = try await UserModel.find(userId, on: req.db) else { throw Abort(.notFound) }
+
+        if let existing = try await Self.creator(for: user, on: req.db) {
+            return try await makeResponse(for: user, creator: existing, req: req)
+        }
+        guard Creator.isValidHandle(body.handle) else {
+            throw Abort(.unprocessableEntity, reason: "Handle must be 3–30 lowercase letters, digits or underscores.")
+        }
+        guard !body.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw Abort(.unprocessableEntity, reason: "Display name is required.")
+        }
+        guard try await CreatorModel.query(on: req.db).filter(\.$handle == body.handle).first() == nil else {
+            throw Abort(.conflict, reason: "That handle is taken.")
+        }
+
+        let creator = Creator(displayName: body.displayName, handle: body.handle)
+        let creatorModel = CreatorModel(from: creator)
+        user.creatorId = creator.id
+        try await req.db.transaction { db in
+            try await creatorModel.create(on: db)
+            try await user.save(on: db)
+        }
+        return try await makeResponse(for: user, creator: creator, req: req)
     }
 
     /// Resolves the user's creator profile, if they have one.

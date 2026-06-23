@@ -76,6 +76,24 @@ final class AuthClientTests: XCTestCase {
         XCTAssertEqual(transport.requests.first?.value(forHTTPHeaderField: "Authorization"), "Bearer mytoken")
     }
 
+    func testCompleteProfileAttachesBearerToken() async throws {
+        let creator = Creator(displayName: "DJ", handle: "dj")
+        let transport = MockTransport { _ in (200, try self.session(creator, token: "newtoken")) }
+        let client = AuthClient(baseURL: baseURL, transport: transport)
+
+        let result = try await client.completeProfile(token: "oldtoken", displayName: "DJ", handle: "dj")
+        XCTAssertEqual(result.token, "newtoken")
+        XCTAssertEqual(result.creator?.handle, "dj")
+
+        let req = transport.requests.first!
+        XCTAssertEqual(req.httpMethod, "POST")
+        XCTAssertEqual(req.url?.path, "/auth/profile")
+        XCTAssertEqual(req.value(forHTTPHeaderField: "Authorization"), "Bearer oldtoken")
+        let body = try JSONSerialization.jsonObject(with: req.httpBody!) as! [String: String]
+        XCTAssertEqual(body["displayName"], "DJ")
+        XCTAssertEqual(body["handle"], "dj")
+    }
+
     func testAuthenticatedTransportAttachesToken() async throws {
         let inner = MockTransport { _ in (200, Data("[]".utf8)) }
         let transport = AuthenticatedTransport(base: inner) { "thetoken" }
