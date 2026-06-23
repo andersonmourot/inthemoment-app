@@ -20,4 +20,12 @@ enum MediaStorage {
         try data.write(to: url)
         return url
     }
+
+    static func resolvedLocalFileURL(for url: URL) -> URL? {
+        guard url.isFileURL else { return nil }
+        if FileManager.default.fileExists(atPath: url.path) { return url }
+
+        let fallback = mediaDirectory.appendingPathComponent(url.lastPathComponent)
+        return FileManager.default.fileExists(atPath: fallback.path) ? fallback : nil
+    }
 }

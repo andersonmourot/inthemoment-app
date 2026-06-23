@@ -37,13 +37,13 @@ struct MediaDetailView: View {
         switch item.kind {
         case .photo:
             VStack {
-                RemoteImage(url: item.url, contentMode: .fit)
+                RemoteImage(url: resolvedURL(item.url), contentMode: .fit)
                 if let caption = item.caption {
                     Text(caption).font(.callout).foregroundStyle(.white.opacity(0.8)).padding()
                 }
             }
         case .video:
-            VideoPlayer(player: AVPlayer(url: item.url))
+            VideoPlayer(player: AVPlayer(url: resolvedURL(item.url)))
         }
     }
 
@@ -74,5 +74,9 @@ struct MediaDetailView: View {
         } catch {
             downloadState = .failed(error.localizedDescription)
         }
+    }
+
+    private func resolvedURL(_ url: URL) -> URL {
+        MediaStorage.resolvedLocalFileURL(for: url) ?? url
     }
 }

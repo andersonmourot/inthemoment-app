@@ -49,9 +49,16 @@ enum MediaDownloader {
         guard item.isDownloadable else { throw DownloadError.notDownloadable }
         try await requestAddPermission()
 
-        let (data, response) = try await URLSession.shared.data(from: item.url)
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw DownloadError.badResponse
+        let assetURL = MediaStorage.resolvedLocalFileURL(for: item.url) ?? item.url
+        let data: Data
+        if assetURL.isFileURL {
+            data = try Data(contentsOf: assetURL)
+        } else {
+            let (downloaded, response) = try await URLSession.shared.data(from: assetURL)
+            if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                throw DownloadError.badResponse
+            }
+            data = downloaded
         }
 
         switch item.kind {
@@ -63,7 +70,7 @@ enum MediaDownloader {
             // PHPhotoLibrary requires a file URL for video resources.
             let tmp = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension(item.url.pathExtension.isEmpty ? "mp4" : item.url.pathExtension)
+                .appendingPathExtension(assetURL.pathExtension.isEmpty ? "mp4" : assetURL.pathExtension)
             try data.write(to: tmp)
             defer { try? FileManager.default.removeItem(at: tmp) }
             try await performChange { request in
