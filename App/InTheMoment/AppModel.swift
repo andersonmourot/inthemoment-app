@@ -40,14 +40,24 @@ final class AppModel: ObservableObject {
     /// The fan's on-device favorites and followed creators.
     @Published private(set) var fanPrefs = FanPreferences()
 
+    /// Engagement stats for the current creator's events, keyed by event id.
+    @Published private(set) var statsByEvent: [UUID: EventStats] = [:]
+
     private let store: EventStore
     /// Swapped between the on-device file store (anonymous) and the API store
     /// (signed in) so favorites/follows sync to the account when logged in.
     private var fanStore: FanPreferencesStore
+    private let analyticsStore: AnalyticsStore
 
-    init(store: EventStore? = nil, fanStore: FanPreferencesStore? = nil, currentCreator: Creator? = nil) {
+    init(
+        store: EventStore? = nil,
+        fanStore: FanPreferencesStore? = nil,
+        analyticsStore: AnalyticsStore? = nil,
+        currentCreator: Creator? = nil
+    ) {
         self.store = store ?? AppModel.makeDefaultStore()
         self.fanStore = fanStore ?? AppModel.makeDefaultFanStore()
+        self.analyticsStore = analyticsStore ?? AppModel.makeDefaultAnalyticsStore()
         self.currentCreator = currentCreator
     }
 
@@ -68,6 +78,11 @@ final class AppModel: ObservableObject {
     private static func makeAPIFanStore() -> FanPreferencesStore {
         let transport = AuthenticatedTransport { TokenHolder.shared.token }
         return APIFanPreferencesStore(baseURL: AppConfig.apiBaseURL, transport: transport)
+    }
+
+    private static func makeDefaultAnalyticsStore() -> AnalyticsStore {
+        let transport = AuthenticatedTransport { TokenHolder.shared.token }
+        return APIAnalyticsStore(baseURL: AppConfig.apiBaseURL, transport: transport)
     }
 
     /// Loads initial data. When restoring a signed-in `account`, switches to the
@@ -99,6 +114,36 @@ final class AppModel: ObservableObject {
         } catch {
             loadError = error.localizedDescription
         }
+        await loadCreatorStats()
+    }
+
+    // MARK: Analytics
+
+    /// Stats for one of the creator's events (zeroes until loaded/recorded).
+    func stats(for eventID: UUID) -> EventStats {
+        statsByEvent[eventID] ?? EventStats(eventID: eventID)
+    }
+
+    /// Loads engagement stats for every event owned by the signed-in creator.
+    private func loadCreatorStats() async {
+        guard currentCreator != nil else {
+            statsByEvent = [:]
+            return
+        }
+        if let stats = try? await analyticsStore.creatorStats() {
+            statsByEvent = Dictionary(stats.map { ($0.eventID, $0) }, uniquingKeysWith: { a, _ in a })
+        }
+    }
+
+    /// Records that a fan opened an event page. Fire-and-forget.
+    func recordView(_ eventID: UUID) async {
+        try? await analyticsStore.recordView(eventID: eventID)
+    }
+
+    /// Records `count` downloads from an event. Fire-and-forget.
+    func recordDownloads(eventID: UUID, count: Int) async {
+        guard count > 0 else { return }
+        try? await analyticsStore.recordDownloads(eventID: eventID, count: count)
     }
 
     func creator(id: UUID) -> Creator? {

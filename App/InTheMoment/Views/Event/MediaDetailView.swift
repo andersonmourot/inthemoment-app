@@ -5,6 +5,8 @@ import InTheMomentCore
 /// Full-screen viewer for a single photo or video, with a Save-to-device action.
 struct MediaDetailView: View {
     let item: MediaItem
+    /// Called after the item is successfully saved (used to record a download).
+    var onDownloaded: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
 
     @State private var downloadState: DownloadState = .idle
@@ -68,6 +70,7 @@ struct MediaDetailView: View {
         do {
             try await MediaDownloader.saveToPhotoLibrary(item)
             downloadState = .done
+            onDownloaded?()
         } catch {
             downloadState = .failed(error.localizedDescription)
         }

@@ -16,6 +16,7 @@ struct CreatorEventDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+                statsCard
                 Divider()
                 if liveEvent.media.isEmpty {
                     ContentUnavailableViewCompat(
@@ -65,6 +66,18 @@ struct CreatorEventDetailView: View {
         .fullScreenCover(item: $selectedMedia) { MediaDetailView(item: $0) }
     }
 
+    private var statsCard: some View {
+        let stats = model.stats(for: liveEvent.id)
+        return HStack(spacing: 0) {
+            StatTile(value: stats.views, label: "Views", systemImage: "eye")
+            Divider().frame(height: 36)
+            StatTile(value: stats.downloads, label: "Downloads", systemImage: "square.and.arrow.down")
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             RemoteImage(url: liveEvent.displayCoverURL)
@@ -83,5 +96,24 @@ struct CreatorEventDetailView: View {
                 Text(details).padding(.top, 4)
             }
         }
+    }
+}
+
+/// One labeled metric in the creator's stats card.
+private struct StatTile: View {
+    let value: Int
+    let label: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Label("\(value)", systemImage: systemImage)
+                .font(.title3.weight(.semibold))
+                .labelStyle(.titleAndIcon)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
