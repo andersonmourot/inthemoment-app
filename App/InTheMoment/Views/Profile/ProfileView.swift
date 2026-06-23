@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 import InTheMomentCore
 
 /// The signed-in profile and a directory of other creators.
@@ -16,17 +17,11 @@ struct ProfileView: View {
             List {
                 if let creator = model.currentCreator {
                     Section {
-                        CreatorHeader(creator: creator)
-                        PhotosPicker(
-                            selection: $avatarSelection,
-                            matching: .images
-                        ) {
-                            Label(
-                                creator.avatarURL == nil ? "Add Profile Picture" : "Change Profile Picture",
-                                systemImage: "camera"
-                            )
-                        }
-                        .disabled(isUpdatingAvatar)
+                        CreatorHeader(
+                            creator: creator,
+                            avatarSelection: $avatarSelection,
+                            isUpdatingAvatar: isUpdatingAvatar
+                        )
                         if isUpdatingAvatar {
                             ProgressView("Updating profile picture...")
                         }
@@ -202,13 +197,39 @@ private struct SettingsView: View {
 
 private struct CreatorHeader: View {
     let creator: Creator
+    @Binding var avatarSelection: PhotosPickerItem?
+    let isUpdatingAvatar: Bool
 
     var body: some View {
         HStack(spacing: 14) {
-            RemoteImage(url: creator.avatarURL)
-                .frame(width: 60, height: 60)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(Color.appAccent, lineWidth: 2))
+            PhotosPicker(selection: $avatarSelection, matching: .images) {
+                ZStack(alignment: .bottomTrailing) {
+                    RemoteImage(url: creator.avatarURL)
+                        .frame(width: 60, height: 60)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.appAccent, lineWidth: 2))
+
+                    ZStack {
+                        Circle().fill(Color.appAccent)
+                        if isUpdatingAvatar {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .tint(.white)
+                        } else {
+                            Image(systemName: creator.avatarURL == nil ? "plus" : "camera.fill")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(width: 22, height: 22)
+                    .overlay(Circle().stroke(Color(uiColor: .systemBackground), lineWidth: 2))
+                    .offset(x: 2, y: 2)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(isUpdatingAvatar)
+            .accessibilityLabel(creator.avatarURL == nil ? "Add Profile Picture" : "Change Profile Picture")
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(creator.displayName).font(.title3.bold())
                 Text(creator.displayHandle).foregroundStyle(Color.appAccent)
