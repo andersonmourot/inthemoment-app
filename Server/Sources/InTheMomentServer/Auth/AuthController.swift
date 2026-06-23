@@ -23,11 +23,13 @@ struct FanRegisterRequest: Content {
 /// Returned on register/login. `creator` is nil for fan accounts.
 struct AuthResponse: Content {
     let token: String
+    let userId: UUID
     let creator: Creator?
 }
 
 /// Returned by `/auth/me` — the signed-in account, with its creator profile if any.
 struct AccountResponse: Content {
+    let id: UUID
     let email: String
     let creator: Creator?
 }
@@ -118,7 +120,7 @@ struct AuthController: RouteCollection {
         let userId = try token.requireUserID()
         guard let user = try await UserModel.find(userId, on: req.db) else { throw Abort(.notFound) }
         let creator = try await Self.creator(for: user, on: req.db)
-        return AccountResponse(email: user.email, creator: creator)
+        return AccountResponse(id: userId, email: user.email, creator: creator)
     }
 
     /// Resolves the user's creator profile, if they have one.
@@ -128,8 +130,9 @@ struct AuthController: RouteCollection {
     }
 
     private func makeResponse(for user: UserModel, creator: Creator?, req: Request) async throws -> AuthResponse {
-        let payload = UserToken(userId: try user.requireID(), creatorId: creator?.id)
+        let userId = try user.requireID()
+        let payload = UserToken(userId: userId, creatorId: creator?.id)
         let token = try await req.jwt.sign(payload)
-        return AuthResponse(token: token, creator: creator)
+        return AuthResponse(token: token, userId: userId, creator: creator)
     }
 }

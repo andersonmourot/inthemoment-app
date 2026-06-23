@@ -67,7 +67,7 @@ final class AuthService: ObservableObject {
         do {
             let session = try await action()
             TokenHolder.shared.set(session.token)
-            let account = Account(email: email, creator: session.creator)
+            let account = Account(id: session.userId, email: email, creator: session.creator)
             self.account = account
             return account
         } catch let error as AuthError {

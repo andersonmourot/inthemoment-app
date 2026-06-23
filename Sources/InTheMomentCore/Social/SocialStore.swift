@@ -1,0 +1,77 @@
+import Foundation
+
+/// Abstracts comments and likes on events. Reading is public; posting/deleting
+/// comments and toggling likes require an authenticated transport in the API
+/// implementation.
+public protocol SocialStore: Sendable {
+    /// Comments for an event, oldest first.
+    func comments(forEvent eventID: UUID) async throws -> [Comment]
+    /// Posts a comment as the authenticated user; returns the created comment.
+    @discardableResult
+    func addComment(eventID: UUID, body: String) async throws -> Comment
+    /// Deletes a comment (author or the event's creator only).
+    func deleteComment(id: UUID, eventID: UUID) async throws
+    /// The like count and the viewer's like state for an event.
+    func likeSummary(forEvent eventID: UUID) async throws -> LikeSummary
+    /// Sets the viewer's like state; returns the updated summary.
+    @discardableResult
+    func setLike(eventID: UUID, _ liked: Bool) async throws -> LikeSummary
+}
+
+/// In-memory ``SocialStore`` for tests and previews. All comments are attributed
+/// to a single configured viewer, whose likes drive `likedByViewer`.
+public actor InMemorySocialStore: SocialStore {
+    private var commentsByEvent: [UUID: [Comment]] = [:]
+    private var likesByEvent: [UUID: Set<UUID>] = [:]
+    private let viewerID: UUID
+    private let viewerName: String
+
+    public init(viewerID: UUID = UUID(), viewerName: String = "You", comments: [Comment] = []) {
+        self.viewerID = viewerID
+        self.viewerName = viewerName
+        for comment in comments {
+            commentsByEvent[comment.eventID, default: []].append(comment)
+        }
+    }
+
+    public func comments(forEvent eventID: UUID) async throws -> [Comment] {
+        (commentsByEvent[eventID] ?? []).sorted { $0.createdAt < $1.createdAt }
+    }
+
+    @discardableResult
+    public func addComment(eventID: UUID, body: String) async throws -> Comment {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard Comment.isValidBody(trimmed) else { throw SocialStoreError.invalidComment }
+        let comment = Comment(
+            eventID: eventID,
+            authorID: viewerID,
+            authorName: viewerName,
+            body: trimmed
+        )
+        commentsByEvent[eventID, default: []].append(comment)
+        return comment
+    }
+
+    public func deleteComment(id: UUID, eventID: UUID) async throws {
+        commentsByEvent[eventID]?.removeAll { $0.id == id }
+    }
+
+    public func likeSummary(forEvent eventID: UUID) async throws -> LikeSummary {
+        let likes = likesByEvent[eventID] ?? []
+        return LikeSummary(eventID: eventID, count: likes.count, likedByViewer: likes.contains(viewerID))
+    }
+
+    @discardableResult
+    public func setLike(eventID: UUID, _ liked: Bool) async throws -> LikeSummary {
+        if liked {
+            likesByEvent[eventID, default: []].insert(viewerID)
+        } else {
+            likesByEvent[eventID]?.remove(viewerID)
+        }
+        return try await likeSummary(forEvent: eventID)
+    }
+}
+
+public enum SocialStoreError: Error, Equatable, Sendable {
+    case invalidComment
+}

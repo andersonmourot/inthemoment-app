@@ -8,19 +8,25 @@ import FoundationNetworking
 public struct AuthSession: Codable, Sendable, Equatable {
     public let token: String
     public let creator: Creator?
+    /// The signed-in user's account id (nil for older server responses).
+    public let userId: UUID?
 
-    public init(token: String, creator: Creator?) {
+    public init(token: String, creator: Creator?, userId: UUID? = nil) {
         self.token = token
         self.creator = creator
+        self.userId = userId
     }
 }
 
 /// The signed-in account, as returned by `/auth/me`. A fan account has no creator.
 public struct Account: Codable, Sendable, Equatable {
+    /// The user's account id (nil for older server responses).
+    public let id: UUID?
     public let email: String
     public let creator: Creator?
 
-    public init(email: String, creator: Creator?) {
+    public init(id: UUID? = nil, email: String, creator: Creator?) {
+        self.id = id
         self.email = email
         self.creator = creator
     }
