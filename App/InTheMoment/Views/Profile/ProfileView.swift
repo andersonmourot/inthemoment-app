@@ -107,18 +107,18 @@ struct ProfileView: View {
 
 private struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.system.rawValue
+    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.light.rawValue
 
     private var selectedTheme: Binding<AppTheme> {
         Binding {
-            AppTheme(rawValue: appThemeRaw) ?? .system
+            AppTheme(rawValue: appThemeRaw) ?? .light
         } set: { newValue in
             appThemeRaw = newValue.rawValue
         }
     }
 
     private var appTheme: AppTheme {
-        AppTheme(rawValue: appThemeRaw) ?? .system
+        AppTheme(rawValue: appThemeRaw) ?? .light
     }
 
     var body: some View {
@@ -134,7 +134,7 @@ private struct SettingsView: View {
                 } header: {
                     Text("Appearance")
                 } footer: {
-                    Text("Choose System to match your device, or force Light or Dark mode for this app.")
+                    Text("Choose Light or Dark mode for this app.")
                 }
 
                 Section {

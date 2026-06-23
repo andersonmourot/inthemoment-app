@@ -7,7 +7,6 @@ extension Color {
 }
 
 enum AppTheme: String, CaseIterable, Identifiable {
-    case system
     case light
     case dark
 
@@ -17,7 +16,6 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .system: "System"
         case .light: "Light"
         case .dark: "Dark"
         }
@@ -25,7 +23,6 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var colorScheme: ColorScheme? {
         switch self {
-        case .system: nil
         case .light: .light
         case .dark: .dark
         }

@@ -4,10 +4,10 @@ import SwiftUI
 struct InTheMomentApp: App {
     @StateObject private var model = AppModel()
     @StateObject private var auth = AuthService()
-    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.system.rawValue
+    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.light.rawValue
 
     private var appTheme: AppTheme {
-        AppTheme(rawValue: appThemeRaw) ?? .system
+        AppTheme(rawValue: appThemeRaw) ?? .light
     }
 
     var body: some Scene {
