@@ -67,6 +67,7 @@ continue to decode.
 | `POST` | `/auth/login` | `{ email, password }` | `{ token, userId, creator? }` |
 | `GET` | `/auth/me` | — (Bearer token) | `{ id, email, creator? }` |
 | `POST` | `/auth/profile` | `{ displayName, handle }` (Bearer token) | `{ token, userId, creator }` |
+| `POST` | `/auth/avatar` | multipart `{ file }` (Bearer token) | `Creator` with updated `avatarURL` |
 
 ### Fan preferences (favorites & follows)
 
@@ -93,7 +94,7 @@ modify events owned by your creator.
 | `POST` | `/events` | required | attributed to your creator |
 | `PUT` | `/events/{id}` | required (owner) | replaces media set |
 | `DELETE` | `/events/{id}` | required (owner) | |
-| `POST` | `/events/{id}/uploads` | required (owner) | multipart `{ kind, file }` upload; creates a `MediaItem` |
+| `POST` | `/events/{id}/uploads` | required (owner) | multipart `{ kind, file, thumbnail? }` upload; creates a `MediaItem` |
 | `POST` | `/events/{id}/media` | required (owner) | add one `MediaItem` |
 | `DELETE` | `/events/{id}/media/{mediaId}` | required (owner) | |
 | `GET` | `/uploads/{filename}` | public | uploaded media bytes |

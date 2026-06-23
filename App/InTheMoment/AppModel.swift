@@ -185,14 +185,37 @@ final class AppModel: ObservableObject {
         await perform { try await self.store.addMedia(item, toEvent: eventId) }
     }
 
-    func uploadMedia(data: Data, fileExtension: String, kind: MediaKind, to eventId: UUID) async throws {
+    func uploadMedia(
+        data: Data,
+        fileExtension: String,
+        kind: MediaKind,
+        thumbnailData: Data?,
+        to eventId: UUID
+    ) async throws {
         _ = try await mediaUploadService.upload(
             data: data,
             fileExtension: fileExtension,
             kind: kind,
-            to: eventId
+            to: eventId,
+            thumbnailData: thumbnailData
         )
         await refresh()
+    }
+
+    func updateProfileImage(data: Data, fileExtension: String) async {
+        do {
+            let creator = try await mediaUploadService.uploadAvatar(
+                data: data,
+                fileExtension: fileExtension
+            )
+            currentCreator = creator
+            creators = creators.map { $0.id == creator.id ? creator : $0 }
+            if !creators.contains(where: { $0.id == creator.id }) {
+                creators.append(creator)
+            }
+        } catch {
+            errorMessage = "Couldn't update your profile picture. Please try again."
+        }
     }
 
     func updateEvent(_ event: Event) async {

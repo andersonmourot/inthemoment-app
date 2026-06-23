@@ -19,7 +19,8 @@ struct MediaUploadService {
         data: Data,
         fileExtension: String,
         kind: MediaKind,
-        to eventID: UUID
+        to eventID: UUID,
+        thumbnailData: Data? = nil
     ) async throws -> MediaItem {
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: baseURL.appendingPathComponent("events/\(eventID.uuidString)/uploads"))
@@ -32,7 +33,8 @@ struct MediaUploadService {
             boundary: boundary,
             data: data,
             fileExtension: fileExtension,
-            kind: kind
+            kind: kind,
+            thumbnailData: thumbnailData
         )
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
@@ -42,21 +44,75 @@ struct MediaUploadService {
         return try decoder.decode(MediaItem.self, from: responseData)
     }
 
+    func uploadAvatar(data: Data, fileExtension: String) async throws -> Creator {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var request = URLRequest(url: baseURL.appendingPathComponent("auth/avatar"))
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let token = tokenProvider() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        request.httpBody = fileOnlyMultipartBody(
+            boundary: boundary,
+            fieldName: "file",
+            filename: "avatar.\(fileExtension.isEmpty ? "jpg" : fileExtension)",
+            data: data,
+            mimeType: mimeType(for: fileExtension, kind: .photo)
+        )
+
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw UploadError.failed
+        }
+        return try decoder.decode(Creator.self, from: responseData)
+    }
+
     private func multipartBody(
         boundary: String,
         data: Data,
         fileExtension: String,
-        kind: MediaKind
+        kind: MediaKind,
+        thumbnailData: Data?
     ) -> Data {
         var body = Data()
         let ext = fileExtension.isEmpty ? defaultFileExtension(for: kind) : fileExtension
 
         body.appendFormField(name: "kind", value: kind.rawValue, boundary: boundary)
-        body.append("--\(boundary)\r\n")
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"upload.\(ext)\"\r\n")
-        body.append("Content-Type: \(mimeType(for: ext, kind: kind))\r\n\r\n")
-        body.append(data)
-        body.append("\r\n")
+        body.appendFileField(
+            name: "file",
+            filename: "upload.\(ext)",
+            data: data,
+            mimeType: mimeType(for: ext, kind: kind),
+            boundary: boundary
+        )
+        if let thumbnailData {
+            body.appendFileField(
+                name: "thumbnail",
+                filename: "thumbnail.jpg",
+                data: thumbnailData,
+                mimeType: "image/jpeg",
+                boundary: boundary
+            )
+        }
+        body.append("--\(boundary)--\r\n")
+        return body
+    }
+
+    private func fileOnlyMultipartBody(
+        boundary: String,
+        fieldName: String,
+        filename: String,
+        data: Data,
+        mimeType: String
+    ) -> Data {
+        var body = Data()
+        body.appendFileField(
+            name: fieldName,
+            filename: filename,
+            data: data,
+            mimeType: mimeType,
+            boundary: boundary
+        )
         body.append("--\(boundary)--\r\n")
         return body
     }
@@ -84,5 +140,19 @@ private extension Data {
         append("--\(boundary)\r\n")
         append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n")
         append("\(value)\r\n")
+    }
+
+    mutating func appendFileField(
+        name: String,
+        filename: String,
+        data: Data,
+        mimeType: String,
+        boundary: String
+    ) {
+        append("--\(boundary)\r\n")
+        append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(filename)\"\r\n")
+        append("Content-Type: \(mimeType)\r\n\r\n")
+        append(data)
+        append("\r\n")
     }
 }

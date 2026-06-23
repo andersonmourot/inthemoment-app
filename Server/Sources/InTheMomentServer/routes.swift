@@ -151,28 +151,21 @@ struct EventController: RouteCollection {
         let token = try req.auth.require(UserToken.self)
         guard let eventId = req.parameters.get("id", as: UUID.self) else { throw Abort(.badRequest) }
         _ = try await Self.requireOwnedEvent(eventId, token: token, on: req.db)
-        guard let config = req.application.storage[UploadsConfigurationKey.self] else {
-            throw Abort(.internalServerError, reason: "Uploads are not configured.")
-        }
 
         let body = try req.content.decode(MediaUploadRequest.self)
-        let ext = Self.fileExtension(for: body.file.filename, kind: body.kind)
-        let filename = "\(UUID().uuidString).\(ext)"
-        let destination = URL(fileURLWithPath: config.directory, isDirectory: true)
-            .appendingPathComponent(filename)
-
-        var buffer = body.file.data
-        guard let data = buffer.readData(length: buffer.readableBytes) else {
-            throw Abort(.badRequest, reason: "Upload file is empty.")
+        let mediaURL = try UploadStorage.save(
+            body.file,
+            fallbackExtension: body.kind == .video ? "mp4" : "jpg",
+            req: req
+        )
+        let thumbnailURL = try body.thumbnail.map {
+            try UploadStorage.save($0, fallbackExtension: "jpg", req: req)
         }
-        try data.write(to: destination)
-
-        let mediaURL = try Self.publicUploadURL(filename: filename, req: req)
         let dto = MediaItem(
             eventId: eventId,
             kind: body.kind,
             url: mediaURL,
-            thumbnailURL: body.kind == .photo ? mediaURL : nil
+            thumbnailURL: thumbnailURL ?? (body.kind == .photo ? mediaURL : nil)
         )
         let media = MediaModel(from: dto)
         media.$event.id = eventId
@@ -222,28 +215,10 @@ struct EventController: RouteCollection {
         return model
     }
 
-    private static func fileExtension(for filename: String, kind: MediaKind) -> String {
-        let ext = URL(fileURLWithPath: filename).pathExtension.lowercased()
-        let allowed = Set(["jpg", "jpeg", "png", "heic", "webp", "gif", "mp4", "mov", "m4v"])
-        if allowed.contains(ext) { return ext }
-        return kind == .video ? "mp4" : "jpg"
-    }
-
-    private static func publicUploadURL(filename: String, req: Request) throws -> URL {
-        if let base = Environment.get("PUBLIC_BASE_URL"),
-           let url = URL(string: base)?.appendingPathComponent("uploads").appendingPathComponent(filename) {
-            return url
-        }
-        let proto = req.headers.first(name: "X-Forwarded-Proto") ?? "http"
-        guard let host = req.headers.first(name: "Host"),
-              let url = URL(string: "\(proto)://\(host)/uploads/\(filename)") else {
-            throw Abort(.internalServerError, reason: "Could not build upload URL.")
-        }
-        return url
-    }
 }
 
 private struct MediaUploadRequest: Content {
     let kind: MediaKind
     let file: File
+    let thumbnail: File?
 }

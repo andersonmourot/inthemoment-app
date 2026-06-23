@@ -43,6 +43,7 @@ struct AuthController: RouteCollection {
         let protected = auth.grouped(UserToken.authenticator(), UserToken.guardMiddleware())
         protected.get("me", use: me)
         protected.post("profile", use: completeProfile)
+        protected.post("avatar", use: uploadAvatar)
     }
 
     func register(req: Request) async throws -> AuthResponse {
@@ -130,6 +131,19 @@ struct AuthController: RouteCollection {
         return try await makeResponse(for: user, creator: creator, req: req)
     }
 
+    func uploadAvatar(req: Request) async throws -> Creator {
+        let token = try req.auth.require(UserToken.self)
+        let creatorId = try token.requireCreatorID()
+        guard let creator = try await CreatorModel.find(creatorId, on: req.db) else {
+            throw Abort(.notFound)
+        }
+        let body = try req.content.decode(AvatarUploadRequest.self)
+        let avatarURL = try UploadStorage.save(body.file, fallbackExtension: "jpg", req: req)
+        creator.avatarURL = avatarURL.absoluteString
+        try await creator.save(on: req.db)
+        return creator.toDTO()
+    }
+
     /// Resolves the user's creator profile, if they have one.
     private static func creator(for user: UserModel, on db: Database) async throws -> Creator? {
         guard let creatorId = user.creatorId else { return nil }
@@ -142,4 +156,8 @@ struct AuthController: RouteCollection {
         let token = try await req.jwt.sign(payload)
         return AuthResponse(token: token, userId: userId, creator: creator)
     }
+}
+
+private struct AvatarUploadRequest: Content {
+    let file: File
 }

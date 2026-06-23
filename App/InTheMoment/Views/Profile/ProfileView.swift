@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import InTheMomentCore
 
 /// The signed-in profile and a directory of other creators.
@@ -7,6 +8,8 @@ struct ProfileView: View {
     @EnvironmentObject private var auth: AuthService
     @State private var showingAuth = false
     @State private var showingSettings = false
+    @State private var avatarSelection: PhotosPickerItem?
+    @State private var isUpdatingAvatar = false
 
     var body: some View {
         NavigationStack {
@@ -14,6 +17,19 @@ struct ProfileView: View {
                 if let creator = model.currentCreator {
                     Section {
                         CreatorHeader(creator: creator)
+                        PhotosPicker(
+                            selection: $avatarSelection,
+                            matching: .images
+                        ) {
+                            Label(
+                                creator.avatarURL == nil ? "Add Profile Picture" : "Change Profile Picture",
+                                systemImage: "camera"
+                            )
+                        }
+                        .disabled(isUpdatingAvatar)
+                        if isUpdatingAvatar {
+                            ProgressView("Updating profile picture...")
+                        }
                     }
                     signOutSection
                 } else if let email = model.signedInEmail {
@@ -90,7 +106,22 @@ struct ProfileView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
+            .onChange(of: avatarSelection) { item in
+                guard let item else { return }
+                Task { await updateAvatar(with: item) }
+            }
         }
+    }
+
+    private func updateAvatar(with item: PhotosPickerItem) async {
+        isUpdatingAvatar = true
+        defer {
+            isUpdatingAvatar = false
+            avatarSelection = nil
+        }
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        let ext = item.supportedContentTypes.first?.preferredFilenameExtension ?? "jpg"
+        await model.updateProfileImage(data: data, fileExtension: ext)
     }
 
     private var signOutSection: some View {
