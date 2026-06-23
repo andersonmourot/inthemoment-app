@@ -6,35 +6,46 @@ struct MediaGridView: View {
     let media: [MediaItem]
     var onTap: (MediaItem) -> Void
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 104), spacing: 6)
-    ]
+    private let spacing: CGFloat = 6
+    private let columns = Array(
+        repeating: GridItem(.flexible(), spacing: 6),
+        count: 3
+    )
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 6) {
+        LazyVGrid(columns: columns, spacing: spacing) {
             ForEach(media) { item in
                 Button { onTap(item) } label: {
-                    GeometryReader { proxy in
-                        RemoteImage(url: item.previewURL)
-                            .frame(width: proxy.size.width, height: proxy.size.width)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay(alignment: .bottomLeading) {
-                                if item.kind == .video {
-                                    Label(item.formattedDuration ?? "", systemImage: "play.fill")
-                                        .labelStyle(.titleAndIcon)
-                                        .font(.caption2.weight(.bold))
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 3)
-                                        .background(.ultraThinMaterial, in: Capsule())
-                                        .padding(6)
-                                }
-                            }
-                        }
-                    }
-                    .aspectRatio(1, contentMode: .fit)
+                    MediaGridCell(item: item)
                 }
                 .buttonStyle(.plain)
             }
         }
+    }
+}
+
+private struct MediaGridCell: View {
+    let item: MediaItem
+
+    var body: some View {
+        ZStack {
+            Rectangle().fill(.quaternary)
+            RemoteImage(url: item.previewURL)
+        }
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(alignment: .bottomLeading) {
+                if item.kind == .video {
+                    Label(item.formattedDuration ?? "", systemImage: "play.fill")
+                        .labelStyle(.titleAndIcon)
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .padding(6)
+                }
+            }
     }
 }
