@@ -75,6 +75,7 @@ struct EventDetailView: View {
         }
         .navigationTitle(liveEvent.title)
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: liveEvent.id) { await model.recordView(liveEvent.id) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -96,7 +97,9 @@ struct EventDetailView: View {
             }
         }
         .fullScreenCover(item: $selectedMedia) { item in
-            MediaDetailView(item: item)
+            MediaDetailView(item: item) {
+                Task { await model.recordDownloads(eventID: liveEvent.id, count: 1) }
+            }
         }
         .alert("Download", isPresented: Binding(
             get: { downloadMessage != nil },
@@ -114,6 +117,7 @@ struct EventDetailView: View {
             defer { isDownloadingAll = false }
             do {
                 let result = try await MediaDownloader.saveAllToPhotoLibrary(liveEvent.media)
+                await model.recordDownloads(eventID: liveEvent.id, count: result.saved)
                 downloadMessage = result.failed == 0
                     ? "Saved \(result.saved) item\(result.saved == 1 ? "" : "s") to your photo library."
                     : "Saved \(result.saved), \(result.failed) failed."

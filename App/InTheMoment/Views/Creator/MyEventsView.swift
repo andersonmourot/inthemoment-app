@@ -37,7 +37,7 @@ struct MyEventsView: View {
                         List {
                             ForEach(mine) { event in
                                 NavigationLink(value: event.id) {
-                                    MyEventRow(event: event)
+                                    MyEventRow(event: event, stats: model.stats(for: event.id))
                                 }
                             }
                             .onDelete { offsets in
@@ -81,6 +81,7 @@ struct MyEventsView: View {
 
 private struct MyEventRow: View {
     let event: Event
+    let stats: EventStats
 
     var body: some View {
         HStack(spacing: 12) {
@@ -101,6 +102,12 @@ private struct MyEventRow: View {
                 Text("\(event.mediaCount) items · \(event.date.eventDayString)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Label("\(stats.views)", systemImage: "eye")
+                    Label("\(stats.downloads)", systemImage: "square.and.arrow.down")
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             }
         }
     }

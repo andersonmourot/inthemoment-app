@@ -27,6 +27,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(MakeUserCreatorOptional())
     app.migrations.add(CreateFavorite())
     app.migrations.add(CreateFollow())
+    app.migrations.add(CreateEventStats())
     try await app.autoMigrate()
 
     try await seedIfEmpty(app)

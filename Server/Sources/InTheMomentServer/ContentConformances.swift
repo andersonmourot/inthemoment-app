@@ -8,3 +8,4 @@ extension Creator: Content {}
 extension Event: Content {}
 extension MediaItem: Content {}
 extension FanPreferences: Content {}
+extension EventStats: Content {}
