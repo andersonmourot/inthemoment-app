@@ -14,9 +14,11 @@ struct RemoteImage: View {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
             } else {
                 placeholder(systemImage: "photo")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
             }
         } else {
@@ -26,14 +28,18 @@ struct RemoteImage: View {
                     image
                         .resizable()
                         .aspectRatio(contentMode: contentMode)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .failure:
                     placeholder(systemImage: "photo")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .empty:
                     Rectangle()
                         .fill(.quaternary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .shimmering()
                 @unknown default:
                     placeholder(systemImage: "photo")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .clipped()
