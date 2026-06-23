@@ -6,6 +6,32 @@ extension Color {
     static let appAccent = Color(red: 0.40, green: 0.22, blue: 0.92)
 }
 
+enum AppTheme: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    static let storageKey = "appTheme"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
 extension DateFormatter {
     static let eventDay: DateFormatter = {
         let f = DateFormatter()

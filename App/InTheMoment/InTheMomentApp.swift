@@ -4,6 +4,11 @@ import SwiftUI
 struct InTheMomentApp: App {
     @StateObject private var model = AppModel()
     @StateObject private var auth = AuthService()
+    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.system.rawValue
+
+    private var appTheme: AppTheme {
+        AppTheme(rawValue: appThemeRaw) ?? .system
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -15,6 +20,7 @@ struct InTheMomentApp: App {
                     await model.bootstrap(account: account)
                 }
                 .tint(Color.appAccent)
+                .preferredColorScheme(appTheme.colorScheme)
                 .onOpenURL { url in
                     Task { await model.handle(url: url) }
                 }

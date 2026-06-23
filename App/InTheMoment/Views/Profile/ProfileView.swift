@@ -6,6 +6,7 @@ struct ProfileView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var auth: AuthService
     @State private var showingAuth = false
+    @State private var showingSettings = false
 
     var body: some View {
         NavigationStack {
@@ -73,8 +74,21 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Settings")
+                }
+            }
             .sheet(isPresented: $showingAuth) {
                 AuthView()
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
             }
         }
     }
@@ -87,6 +101,65 @@ struct ProfileView: View {
             } label: {
                 Text("Sign Out")
             }
+        }
+    }
+}
+
+private struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.system.rawValue
+
+    private var selectedTheme: Binding<AppTheme> {
+        Binding {
+            AppTheme(rawValue: appThemeRaw) ?? .system
+        } set: { newValue in
+            appThemeRaw = newValue.rawValue
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("Theme", selection: selectedTheme) {
+                        ForEach(AppTheme.allCases) { theme in
+                            Text(theme.displayName).tag(theme)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("Choose System to match your device, or force Light or Dark mode for this app.")
+                }
+
+                Section {
+                    LabeledContent("Version", value: appVersion)
+                    LabeledContent("API", value: AppConfig.apiBaseURL.host ?? AppConfig.apiBaseURL.absoluteString)
+                } header: {
+                    Text("About")
+                }
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var appVersion: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        switch (version, build) {
+        case let (version?, build?):
+            return "\(version) (\(build))"
+        case let (version?, nil):
+            return version
+        default:
+            return "Unknown"
         }
     }
 }
