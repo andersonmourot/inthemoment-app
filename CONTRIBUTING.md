@@ -61,10 +61,10 @@ An account is either a **creator** (has a `Creator` profile, can post events) or
 
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
-| `POST` | `/auth/register` | `{ email, password, displayName, handle }` | `{ token, creator }` |
-| `POST` | `/auth/register-fan` | `{ email, password }` | `{ token, creator: null }` |
-| `POST` | `/auth/login` | `{ email, password }` | `{ token, creator? }` |
-| `GET` | `/auth/me` | — (Bearer token) | `{ email, creator? }` |
+| `POST` | `/auth/register` | `{ email, password, displayName, handle }` | `{ token, userId, creator }` |
+| `POST` | `/auth/register-fan` | `{ email, password }` | `{ token, userId, creator: null }` |
+| `POST` | `/auth/login` | `{ email, password }` | `{ token, userId, creator? }` |
+| `GET` | `/auth/me` | — (Bearer token) | `{ id, email, creator? }` |
 
 ### Fan preferences (favorites & follows)
 
@@ -96,6 +96,37 @@ modify events owned by your creator.
 | `GET` | `/creators` · `/creators/{id}` | public | |
 | `PUT` | `/creators/{id}` | required (self) | |
 | `GET` | `/health` | public | `{ "status": "ok" }` |
+
+### Comments & likes
+
+Reads are public. Likes optionally read the token to report `likedByViewer`
+(`false` for anonymous callers). Writes require `Authorization: Bearer <token>`.
+Comments may be deleted by their **author** or the **event's owning creator**.
+
+| Method | Path | Auth | Returns / notes |
+| --- | --- | --- | --- |
+| `GET` | `/events/{id}/comments` | public | `[Comment]`, oldest first |
+| `POST` | `/events/{id}/comments` | required | `{ body }` → the created `Comment` (1–2000 chars) |
+| `DELETE` | `/events/{id}/comments/{commentId}` | required (author/owner) | `204` |
+| `GET` | `/events/{id}/likes` | optional | `LikeSummary` `{ eventID, count, likedByViewer }` |
+| `POST` | `/events/{id}/like` | required | like (idempotent) → updated `LikeSummary` |
+| `DELETE` | `/events/{id}/like` | required | unlike → updated `LikeSummary` |
+
+`Comment` = `{ id, eventID, authorID, authorName, body, createdAt }`. `authorName`
+is denormalized at write time (creator display name, else the fan's email local-part).
+
+### Analytics
+
+Recording is **public** (any viewer contributes); reading is **creator-only**.
+
+| Method | Path | Auth | Returns / notes |
+| --- | --- | --- | --- |
+| `POST` | `/events/{id}/view` | public | `204` — increments view count |
+| `POST` | `/events/{id}/download?count=N` | public | `204` — increments downloads by `N` (default 1) |
+| `GET` | `/events/{id}/stats` | required (owner) | `EventStats` `{ eventID, views, downloads }` |
+| `GET` | `/me/stats` | required (creator) | `[EventStats]` for all of the creator's events |
+
+Recording for an unknown event returns `404` (not a 500).
 
 Errors use Vapor's envelope: `{ "error": true, "reason": "…" }`.
 

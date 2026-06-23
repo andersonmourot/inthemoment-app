@@ -22,17 +22,23 @@ videos; fans browse and download). It has three Swift parts that share models:
   used by both the app and the server. Never duplicate or fork them.
 - **Keep `Sources/InTheMomentCore` platform-agnostic** — no `import SwiftUI`,
   `import UIKit`, or `import Vapor` there.
-- **Views never do networking.** Views → `AppModel` → `EventStore`. Add logic to a
-  store or `AppModel`, not to a `View`.
+- **Views never do networking.** Views → `AppModel` → a store protocol. Add logic
+  to a store or `AppModel`, not to a `View`.
 - **All JSON dates are ISO-8601.** App, `APIEventStore`, and server must stay in sync.
 - **Don't commit secrets.** `JWT_SECRET` is an env var; auth tokens live in the Keychain.
 
 ## Backend architecture
 
-The app depends only on the `EventStore` protocol. Implementations:
-`InMemoryEventStore` (tests/previews), `FileEventStore` (on-device), `APIEventStore`
-(REST, the default). `APIEventStore` takes an injectable `HTTPTransport`; the app
-wraps it in `AuthenticatedTransport` to attach the bearer token.
+Each data concern is its own protocol with an in-memory impl (tests/previews) and
+a REST impl (production), all talking through an injectable `HTTPTransport` wrapped
+in `AuthenticatedTransport` to attach the bearer token:
+
+- `EventStore` — events/media. `InMemoryEventStore`, `FileEventStore` (on-device),
+  `APIEventStore` (default).
+- `FanPreferencesStore` — favorites/follows. `File…` (anonymous) ↔ `API…` (signed in).
+- `AnalyticsStore` — views/downloads. Recording is anonymous; reading is creator-only.
+- `SocialStore` — comments/likes. Reads are public; writes require a token; a
+  comment is deletable by its author or the event's owning creator.
 
 ## Auth
 
@@ -40,9 +46,11 @@ Accounts are creators (have a `Creator` profile) or fans (email + password only)
 `/auth/register` (creator), `/auth/register-fan` (fan) and `/auth/login` return
 `{ token, creator? }`. Read routes are public; event/creator writes require a
 creator token and enforce per-creator ownership (derived from the token, not the
-body). Fan favorites/follows sync per-account via `/me/preferences`,
-`/me/favorites/{id}`, `/me/follows/{id}`; the app uses `APIFanPreferencesStore`
-when signed in and `FileFanPreferencesStore` when anonymous.
+body). Auth responses include the `userId`/`id`. Fan favorites/follows sync
+per-account via `/me/preferences`, `/me/favorites/{id}`, `/me/follows/{id}`; the
+app uses `APIFanPreferencesStore` when signed in and `FileFanPreferencesStore`
+when anonymous. See `CONTRIBUTING.md` for the full REST reference (events, fan
+prefs, comments/likes, analytics).
 
 ## Verifying changes
 
