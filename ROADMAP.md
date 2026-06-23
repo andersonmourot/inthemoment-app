@@ -22,11 +22,12 @@ conventions, and [CONTRIBUTING.md](CONTRIBUTING.md) for build/deploy/REST detail
 | UI polish | `AsyncContentView` loading/error/empty states, shimmer, global action alert | app |
 | Analytics | Per-event view/download counts; `AnalyticsStore` + creator-only read endpoints | core + app + server |
 | Comments & likes | `SocialStore`, comment threads + like button, author/owner delete | core + app + server |
+| Media uploads | Creator photo/video uploads to server storage, public `/uploads/{file}` URLs | app + server |
 
 ## Known constraints / debt
 
-- **Media is not really uploaded.** Creators add media by URL; there is no blob
-  storage. This is the biggest gap before real use (see below).
+- **Media uploads use server-local storage.** This works for the MVP/Fly volume,
+  but should move to S3/R2 or another object store before serious scale.
 - **iOS UI is unverified in CI.** The app target needs Apple's SDK; CI only builds
   + tests the core and builds the server. Verify the app by running the
   `InTheMoment` scheme in Xcode on a Mac.
@@ -42,9 +43,8 @@ conventions, and [CONTRIBUTING.md](CONTRIBUTING.md) for build/deploy/REST detail
 
 ## Next up (suggested order)
 
-1. **Real media upload to cloud storage** — replace URL-only media with actual
-   photo/video uploads (e.g. S3/R2 + presigned URLs, or Fly volume for a start).
-   Touches `MediaItem`, the upload UI (`AddMediaView`), and a new server endpoint.
+1. **Move media uploads to cloud object storage** — replace server-local uploads
+   with S3/R2 + presigned URLs, CDN-friendly public URLs, and lifecycle/backups.
 2. **Fan feed** — a chronological feed of new media from followed creators (the
    Discover "Following" filter is the seed; add a dedicated, time-ordered feed).
 3. **Push / email notifications** — notify creators of comments/likes and fans of

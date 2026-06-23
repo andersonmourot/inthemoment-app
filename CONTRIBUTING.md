@@ -93,8 +93,10 @@ modify events owned by your creator.
 | `POST` | `/events` | required | attributed to your creator |
 | `PUT` | `/events/{id}` | required (owner) | replaces media set |
 | `DELETE` | `/events/{id}` | required (owner) | |
+| `POST` | `/events/{id}/uploads` | required (owner) | multipart `{ kind, file }` upload; creates a `MediaItem` |
 | `POST` | `/events/{id}/media` | required (owner) | add one `MediaItem` |
 | `DELETE` | `/events/{id}/media/{mediaId}` | required (owner) | |
+| `GET` | `/uploads/{filename}` | public | uploaded media bytes |
 | `GET` | `/creators` · `/creators/{id}` | public | |
 | `PUT` | `/creators/{id}` | required (self) | |
 | `GET` | `/health` | public | `{ "status": "ok" }` |
@@ -136,7 +138,9 @@ Errors use Vapor's envelope: `{ "error": true, "reason": "…" }`.
 
 The server is containerized (`Dockerfile`, multi-stage, static Swift stdlib) and
 configured by `fly.toml` (app `inthemoment-api`, region `iad`, 1 GB volume mounted
-at `/data`).
+at `/data`). Uploaded media defaults to a sibling `uploads` directory next to
+`DATABASE_PATH` (for Fly, `/data/uploads`). Override with `UPLOADS_PATH`; set
+`PUBLIC_BASE_URL` if the API needs to generate upload URLs with a fixed public base.
 
 ```bash
 flyctl secrets set JWT_SECRET=$(openssl rand -hex 32) --app inthemoment-api

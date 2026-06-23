@@ -52,18 +52,21 @@ final class AppModel: ObservableObject {
     private var fanStore: FanPreferencesStore
     private let analyticsStore: AnalyticsStore
     private let socialStore: SocialStore
+    private let mediaUploadService: MediaUploadService
 
     init(
         store: EventStore? = nil,
         fanStore: FanPreferencesStore? = nil,
         analyticsStore: AnalyticsStore? = nil,
         socialStore: SocialStore? = nil,
+        mediaUploadService: MediaUploadService? = nil,
         currentCreator: Creator? = nil
     ) {
         self.store = store ?? AppModel.makeDefaultStore()
         self.fanStore = fanStore ?? AppModel.makeDefaultFanStore()
         self.analyticsStore = analyticsStore ?? AppModel.makeDefaultAnalyticsStore()
         self.socialStore = socialStore ?? AppModel.makeDefaultSocialStore()
+        self.mediaUploadService = mediaUploadService ?? MediaUploadService()
         self.currentCreator = currentCreator
     }
 
@@ -180,6 +183,16 @@ final class AppModel: ObservableObject {
 
     func addMedia(_ item: MediaItem, to eventId: UUID) async {
         await perform { try await self.store.addMedia(item, toEvent: eventId) }
+    }
+
+    func uploadMedia(data: Data, fileExtension: String, kind: MediaKind, to eventId: UUID) async throws {
+        _ = try await mediaUploadService.upload(
+            data: data,
+            fileExtension: fileExtension,
+            kind: kind,
+            to: eventId
+        )
+        await refresh()
     }
 
     func updateEvent(_ event: Event) async {

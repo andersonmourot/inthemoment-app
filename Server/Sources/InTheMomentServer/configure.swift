@@ -20,6 +20,13 @@ public func configure(_ app: Application) async throws {
     let dbPath = Environment.get("DATABASE_PATH") ?? "db.sqlite"
     app.databases.use(.sqlite(.file(dbPath)), as: .sqlite)
 
+    let uploadsPath = Environment.get("UPLOADS_PATH") ?? defaultUploadsPath(dbPath: dbPath, workingDirectory: app.directory.workingDirectory)
+    try FileManager.default.createDirectory(
+        at: URL(fileURLWithPath: uploadsPath, isDirectory: true),
+        withIntermediateDirectories: true
+    )
+    app.storage[UploadsConfigurationKey.self] = UploadsConfiguration(directory: uploadsPath)
+
     app.migrations.add(CreateCreator())
     app.migrations.add(CreateEvent())
     app.migrations.add(CreateMedia())
@@ -35,4 +42,16 @@ public func configure(_ app: Application) async throws {
     try await seedIfEmpty(app)
 
     try routes(app)
+}
+
+private func defaultUploadsPath(dbPath: String, workingDirectory: String) -> String {
+    if dbPath.contains("/") {
+        return URL(fileURLWithPath: dbPath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("uploads", isDirectory: true)
+            .path
+    }
+    return URL(fileURLWithPath: workingDirectory, isDirectory: true)
+        .appendingPathComponent("uploads", isDirectory: true)
+        .path
 }

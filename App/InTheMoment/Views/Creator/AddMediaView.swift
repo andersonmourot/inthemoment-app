@@ -61,10 +61,17 @@ struct AddMediaView: View {
                 guard let data = try await item.loadTransferable(type: Data.self) else { continue }
                 let isVideo = item.supportedContentTypes.contains { $0.conforms(to: .movie) }
                 let ext = item.supportedContentTypes.first?.preferredFilenameExtension ?? (isVideo ? "mp4" : "jpg")
+                let kind: MediaKind = isVideo ? .video : .photo
+                do {
+                    try await model.uploadMedia(data: data, fileExtension: ext, kind: kind, to: eventId)
+                    continue
+                } catch {
+                    // If the deployed API does not support uploads yet, keep local media working.
+                }
                 let url = try MediaStorage.store(data: data, fileExtension: ext)
                 let media = MediaItem(
                     eventId: eventId,
-                    kind: isVideo ? .video : .photo,
+                    kind: kind,
                     url: url,
                     thumbnailURL: isVideo ? nil : url
                 )
