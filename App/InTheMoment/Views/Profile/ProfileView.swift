@@ -56,11 +56,11 @@ struct ProfileView: View {
                         HStack {
                             Text(creator.displayName)
                             if creator.isVerified {
-                                Image(systemName: "checkmark.seal.fill").foregroundStyle(.appAccent)
+                                Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
                             }
                             Spacer()
                             if creator.id == model.currentCreator?.id {
-                                Text("You").font(.caption).foregroundStyle(.appAccent)
+                                Text("You").font(.caption).foregroundStyle(Color.appAccent)
                             }
                         }
                     }
@@ -99,10 +99,10 @@ private struct CreatorHeader: View {
             RemoteImage(url: creator.avatarURL)
                 .frame(width: 60, height: 60)
                 .clipShape(Circle())
-                .overlay(Circle().stroke(.appAccent, lineWidth: 2))
+                .overlay(Circle().stroke(Color.appAccent, lineWidth: 2))
             VStack(alignment: .leading, spacing: 2) {
                 Text(creator.displayName).font(.title3.bold())
-                Text(creator.displayHandle).foregroundStyle(.appAccent)
+                Text(creator.displayHandle).foregroundStyle(Color.appAccent)
                 if let bio = creator.bio {
                     Text(bio).font(.caption).foregroundStyle(.secondary)
                 }

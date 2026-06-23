@@ -49,7 +49,7 @@ struct SavedView: View {
                                             .clipShape(Circle())
                                         VStack(alignment: .leading, spacing: 1) {
                                             Text(creator.displayName).font(.subheadline.weight(.semibold))
-                                            Text(creator.displayHandle).font(.caption).foregroundStyle(.appAccent)
+                                            Text(creator.displayHandle).font(.caption).foregroundStyle(Color.appAccent)
                                         }
                                         Spacer()
                                         Button("Unfollow") {

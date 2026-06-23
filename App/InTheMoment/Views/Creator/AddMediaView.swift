@@ -25,7 +25,7 @@ struct AddMediaView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(.appAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.appAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
                 }
 
                 if isImporting {
