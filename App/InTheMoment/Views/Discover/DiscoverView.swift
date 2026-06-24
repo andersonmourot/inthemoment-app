@@ -10,7 +10,8 @@ struct DiscoverView: View {
     @State private var filter: Filter = .all
 
     private var results: [Event] {
-        let base = filter == .following ? model.followedEvents : model.events
+        let activeFilter: Filter = model.followedCreators.isEmpty ? .all : filter
+        let base = activeFilter == .following ? model.followedEvents : model.events
         return EventFeed.search(base, query: query)
     }
 
@@ -32,7 +33,7 @@ struct DiscoverView: View {
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
                         }
-                        if filter == .following && results.isEmpty {
+                        if filter == .following && !model.followedCreators.isEmpty && results.isEmpty {
                             Text("No events from creators you follow yet.")
                                 .foregroundStyle(.secondary)
                                 .font(.subheadline)
@@ -61,6 +62,11 @@ struct DiscoverView: View {
             }
             .searchable(text: $query, prompt: "Search events")
             .refreshable { await model.refresh() }
+            .onChange(of: model.followedCreators.isEmpty) { isEmpty in
+                if isEmpty {
+                    filter = .all
+                }
+            }
         }
     }
 }
