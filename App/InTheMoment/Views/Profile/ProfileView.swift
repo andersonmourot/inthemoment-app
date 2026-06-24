@@ -35,6 +35,7 @@ struct ProfileView: View {
                             Label("Edit Profile", systemImage: "pencil")
                         }
                     }
+                    CreatorAnalyticsSection()
                     myEventsSection
                 } else if let email = model.signedInEmail {
                     Section {
@@ -171,6 +172,69 @@ struct ProfileView: View {
         } header: {
             Text("My Events")
         }
+    }
+}
+
+private struct CreatorAnalyticsSection: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Section {
+            HStack(spacing: 0) {
+                ProfileMetricTile(value: model.totalCreatorViews, label: "Views", systemImage: "eye")
+                Divider().frame(height: 36)
+                ProfileMetricTile(value: model.totalCreatorDownloads, label: "Downloads", systemImage: "square.and.arrow.down")
+            }
+            .padding(.vertical, 8)
+
+            HStack(spacing: 0) {
+                ProfileMetricTile(value: model.publishedEventCount, label: "Published", systemImage: "globe")
+                Divider().frame(height: 36)
+                ProfileMetricTile(value: model.draftEventCount, label: "Drafts", systemImage: "doc")
+            }
+            .padding(.vertical, 8)
+
+            if let top = model.topEventByEngagement {
+                NavigationLink {
+                    CreatorEventDetailView(event: top)
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Top event")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(top.title)
+                                .font(.subheadline.weight(.semibold))
+                            let stats = model.stats(for: top.id)
+                            Text("\(stats.views) views - \(stats.downloads) downloads")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                }
+            }
+        } header: {
+            Text("Analytics")
+        }
+    }
+}
+
+private struct ProfileMetricTile: View {
+    let value: Int
+    let label: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Label("\(value)", systemImage: systemImage)
+                .font(.headline.weight(.semibold))
+                .labelStyle(.titleAndIcon)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

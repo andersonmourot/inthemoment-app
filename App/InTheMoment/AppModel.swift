@@ -142,6 +142,30 @@ final class AppModel: ObservableObject {
         statsByEvent[eventID] ?? EventStats(eventID: eventID)
     }
 
+    var totalCreatorViews: Int {
+        myEventsList.reduce(0) { $0 + stats(for: $1.id).views }
+    }
+
+    var totalCreatorDownloads: Int {
+        myEventsList.reduce(0) { $0 + stats(for: $1.id).downloads }
+    }
+
+    var publishedEventCount: Int {
+        myEventsList.filter(\.isPublished).count
+    }
+
+    var draftEventCount: Int {
+        myEventsList.filter { !$0.isPublished }.count
+    }
+
+    var topEventByEngagement: Event? {
+        myEventsList.max { lhs, rhs in
+            let lhsStats = stats(for: lhs.id)
+            let rhsStats = stats(for: rhs.id)
+            return (lhsStats.views + lhsStats.downloads) < (rhsStats.views + rhsStats.downloads)
+        }
+    }
+
     /// Loads engagement stats for every event owned by the signed-in creator.
     private func loadCreatorStats() async {
         guard currentCreator != nil else {
