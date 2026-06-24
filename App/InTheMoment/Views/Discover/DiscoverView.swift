@@ -5,13 +5,14 @@ import InTheMomentCore
 struct DiscoverView: View {
     @EnvironmentObject private var model: AppModel
     @State private var query = ""
+    @State private var path: [UUID] = []
 
     private var results: [Event] {
         EventFeed.search(model.events, query: query)
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             AsyncContentView(
                 isLoading: model.isLoading,
                 hasLoaded: model.hasLoaded,
@@ -19,15 +20,17 @@ struct DiscoverView: View {
                 errorMessage: model.loadError,
                 retry: { await model.refresh() }
             ) {
-                    List {
-                        ForEach(results) { event in
-                            NavigationLink(value: event.id) {
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(results) { event in
                                 EventRow(event: event, creator: model.creator(id: event.creatorId))
-                            }
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                                    .contentShape(Rectangle())
+                                    .onTapGesture { path.append(event.id) }
                         }
                     }
-                    .listStyle(.plain)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                }
             } empty: {
                 ContentUnavailableViewCompat(
                     title: "No events yet",
@@ -92,6 +95,7 @@ private struct EventRow: View {
                 .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 4)
     }
 }

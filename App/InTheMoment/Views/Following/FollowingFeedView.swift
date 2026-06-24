@@ -4,13 +4,14 @@ import InTheMomentCore
 struct FollowingFeedView: View {
     @EnvironmentObject private var model: AppModel
     @State private var query = ""
+    @State private var path: [UUID] = []
 
     private var results: [Event] {
         EventFeed.search(model.followedEvents, query: query)
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             AsyncContentView(
                 isLoading: model.isLoading,
                 hasLoaded: model.hasLoaded,
@@ -18,15 +19,17 @@ struct FollowingFeedView: View {
                 errorMessage: model.loadError,
                 retry: { await model.refresh() }
             ) {
-                List {
-                    ForEach(results) { event in
-                        NavigationLink(value: event.id) {
+                ScrollView {
+                    LazyVStack(spacing: 16) {
+                        ForEach(results) { event in
                             FollowingEventRow(event: event, creator: model.creator(id: event.creatorId))
+                                .contentShape(Rectangle())
+                                .onTapGesture { path.append(event.id) }
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                 }
-                .listStyle(.plain)
             } empty: {
                 emptyState
             }
@@ -104,6 +107,7 @@ private struct FollowingEventRow: View {
                 .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 4)
     }
 }

@@ -87,13 +87,12 @@ struct CreatorEventDetailView: View {
         } message: {
             Text("This removes the event and its media from EncoreMoment.")
         }
-        .confirmationDialog(
+        .alert(
             "Remove this media?",
             isPresented: Binding(
                 get: { mediaPendingRemoval != nil },
                 set: { if !$0 { mediaPendingRemoval = nil } }
-            ),
-            titleVisibility: .visible
+            )
         ) {
             Button("Remove Media", role: .destructive) {
                 removePendingMedia()
