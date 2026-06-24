@@ -11,6 +11,7 @@ struct CommentsSection: View {
     @State private var hasLoaded = false
     @State private var draft = ""
     @State private var isPosting = false
+    @State private var reportTarget: ReportTarget?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -25,9 +26,19 @@ struct CommentsSection: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(comments) { comment in
-                    CommentRow(comment: comment, canDelete: model.canDelete(comment, in: event)) {
-                        await delete(comment)
-                    }
+                    CommentRow(
+                        comment: comment,
+                        canDelete: model.canDelete(comment, in: event),
+                        onReport: {
+                            reportTarget = ReportTarget(
+                                targetType: .comment,
+                                targetID: comment.id,
+                                eventID: event.id,
+                                title: "Report Comment"
+                            )
+                        },
+                        onDelete: { await delete(comment) }
+                    )
                 }
             }
 
@@ -40,6 +51,9 @@ struct CommentsSection: View {
             }
         }
         .task(id: event.id) { await load() }
+        .sheet(item: $reportTarget) { target in
+            ReportSheet(target: target)
+        }
     }
 
     private var title: String {
@@ -91,6 +105,7 @@ struct CommentsSection: View {
 private struct CommentRow: View {
     let comment: Comment
     let canDelete: Bool
+    let onReport: () -> Void
     let onDelete: () async -> Void
 
     var body: some View {
@@ -102,6 +117,14 @@ private struct CommentRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                Button {
+                    onReport()
+                } label: {
+                    Image(systemName: "flag")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Report comment")
                 if canDelete {
                     Button(role: .destructive) {
                         Task { await onDelete() }

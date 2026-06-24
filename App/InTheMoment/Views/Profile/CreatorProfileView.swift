@@ -4,6 +4,7 @@ import InTheMomentCore
 struct CreatorProfileView: View {
     let creator: Creator
     @EnvironmentObject private var model: AppModel
+    @State private var reportTarget: ReportTarget?
 
     private var liveCreator: Creator {
         model.creator(id: creator.id) ?? model.currentCreator.flatMap { $0.id == creator.id ? $0 : nil } ?? creator
@@ -80,6 +81,26 @@ struct CreatorProfileView: View {
         }
         .navigationTitle(liveCreator.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if !isCurrentCreator {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        reportTarget = ReportTarget(
+                            targetType: .creator,
+                            targetID: liveCreator.id,
+                            eventID: nil,
+                            title: "Report Creator"
+                        )
+                    } label: {
+                        Image(systemName: "flag")
+                    }
+                    .accessibilityLabel("Report creator")
+                }
+            }
+        }
+        .sheet(item: $reportTarget) { target in
+            ReportSheet(target: target)
+        }
     }
 }
 

@@ -10,6 +10,7 @@ struct MediaDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var downloadState: DownloadState = .idle
+    @State private var reportTarget: ReportTarget?
 
     private enum DownloadState: Equatable {
         case idle, downloading, done, failed(String)
@@ -26,9 +27,25 @@ struct MediaDetailView: View {
                     Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) { downloadButton }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        reportTarget = ReportTarget(
+                            targetType: .media,
+                            targetID: item.id,
+                            eventID: item.eventId,
+                            title: "Report Media"
+                        )
+                    } label: {
+                        Image(systemName: "flag")
+                    }
+                    .accessibilityLabel("Report media")
+                }
             }
             .toolbarBackground(.visible, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(item: $reportTarget) { target in
+                ReportSheet(target: target)
+            }
         }
     }
 

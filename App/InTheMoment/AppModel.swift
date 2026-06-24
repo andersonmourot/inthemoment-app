@@ -53,6 +53,7 @@ final class AppModel: ObservableObject {
     private let analyticsStore: AnalyticsStore
     private let socialStore: SocialStore
     private let mediaUploadService: MediaUploadService
+    private let reportService: ReportService
 
     init(
         store: EventStore? = nil,
@@ -60,6 +61,7 @@ final class AppModel: ObservableObject {
         analyticsStore: AnalyticsStore? = nil,
         socialStore: SocialStore? = nil,
         mediaUploadService: MediaUploadService? = nil,
+        reportService: ReportService? = nil,
         currentCreator: Creator? = nil
     ) {
         self.store = store ?? AppModel.makeDefaultStore()
@@ -67,6 +69,7 @@ final class AppModel: ObservableObject {
         self.analyticsStore = analyticsStore ?? AppModel.makeDefaultAnalyticsStore()
         self.socialStore = socialStore ?? AppModel.makeDefaultSocialStore()
         self.mediaUploadService = mediaUploadService ?? MediaUploadService()
+        self.reportService = reportService ?? ReportService()
         self.currentCreator = currentCreator
     }
 
@@ -412,6 +415,16 @@ final class AppModel: ObservableObject {
         } catch {
             errorMessage = "Couldn't update your like. Please try again."
             return nil
+        }
+    }
+
+    func submitReport(_ report: ReportRequest) async -> Bool {
+        do {
+            try await reportService.submit(report)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
         }
     }
 

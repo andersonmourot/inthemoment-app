@@ -11,6 +11,9 @@ struct RootTabView: View {
             FollowingFeedView()
                 .tabItem { Label("Following", systemImage: "person.2") }
 
+            CreatorsView()
+                .tabItem { Label("Creators", systemImage: "person.text.rectangle") }
+
             SavedView()
                 .tabItem { Label("Saved", systemImage: "heart") }
 

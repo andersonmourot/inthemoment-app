@@ -11,3 +11,4 @@ extension FanPreferences: Content {}
 extension EventStats: Content {}
 extension Comment: Content {}
 extension LikeSummary: Content {}
+extension ReportRequest: Content {}

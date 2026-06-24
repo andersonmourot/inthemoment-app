@@ -42,6 +42,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateEventStats())
     app.migrations.add(CreateComment())
     app.migrations.add(CreateEventLike())
+    app.migrations.add(CreateReport())
     try await app.autoMigrate()
 
     try await seedIfEmpty(app)

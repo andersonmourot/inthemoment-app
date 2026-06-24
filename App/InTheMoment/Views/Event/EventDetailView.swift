@@ -15,6 +15,7 @@ struct EventDetailView: View {
     @State private var showingMediaPicker = false
     @State private var mediaSelection: [PhotosPickerItem] = []
     @State private var isImportingMedia = false
+    @State private var reportTarget: ReportTarget?
 
     /// Always read the freshest copy from the model so newly added media appears.
     private var liveEvent: Event { model.event(id: event.id) ?? event }
@@ -133,6 +134,22 @@ struct EventDetailView: View {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        reportTarget = ReportTarget(
+                            targetType: .event,
+                            targetID: liveEvent.id,
+                            eventID: liveEvent.id,
+                            title: "Report Event"
+                        )
+                    } label: {
+                        Label("Report Event", systemImage: "flag")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
         }
         .fullScreenCover(item: $selectedMedia) { item in
             MediaDetailView(item: item) {
@@ -141,6 +158,9 @@ struct EventDetailView: View {
         }
         .sheet(isPresented: $showingAuth) {
             AuthView()
+        }
+        .sheet(item: $reportTarget) { target in
+            ReportSheet(target: target)
         }
         .photosPicker(
             isPresented: $showingMediaPicker,

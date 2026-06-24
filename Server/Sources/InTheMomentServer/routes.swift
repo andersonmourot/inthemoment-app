@@ -13,6 +13,7 @@ func routes(_ app: Application) throws {
     try app.register(collection: FanController())
     try app.register(collection: AnalyticsController())
     try app.register(collection: SocialController())
+    try app.register(collection: ReportController())
 }
 
 struct CreatorController: RouteCollection {
