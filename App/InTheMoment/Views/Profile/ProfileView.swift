@@ -69,25 +69,6 @@ struct ProfileView: View {
                     }
                 }
 
-                Section("Creators on EncoreMoment") {
-                    ForEach(model.creators) { creator in
-                        NavigationLink {
-                            CreatorProfileView(creator: creator)
-                        } label: {
-                            HStack {
-                                Text(creator.displayName)
-                                if creator.isVerified {
-                                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
-                                }
-                                Spacer()
-                                if creator.id == model.currentCreator?.id {
-                                    Text("You").font(.caption).foregroundStyle(Color.appAccent)
-                                }
-                            }
-                        }
-                    }
-                }
-
                 Section {
                     Text("EncoreMoment lets artists and event companies share photos and videos from their events for fans to view and download.")
                         .font(.footnote)

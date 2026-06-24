@@ -6,13 +6,8 @@ struct DiscoverView: View {
     @EnvironmentObject private var model: AppModel
     @State private var query = ""
 
-    private enum Filter: String, CaseIterable { case all = "All", following = "Following" }
-    @State private var filter: Filter = .all
-
     private var results: [Event] {
-        let activeFilter: Filter = model.followedCreators.isEmpty ? .all : filter
-        let base = activeFilter == .following ? model.followedEvents : model.events
-        return EventFeed.search(base, query: query)
+        EventFeed.search(model.events, query: query)
     }
 
     var body: some View {
@@ -25,20 +20,6 @@ struct DiscoverView: View {
                 retry: { await model.refresh() }
             ) {
                     List {
-                        if !model.followedCreators.isEmpty {
-                            Picker("Filter", selection: $filter) {
-                                ForEach(Filter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                            }
-                            .pickerStyle(.segmented)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
-                        }
-                        if filter == .following && !model.followedCreators.isEmpty && results.isEmpty {
-                            Text("No events from creators you follow yet.")
-                                .foregroundStyle(.secondary)
-                                .font(.subheadline)
-                                .listRowSeparator(.hidden)
-                        }
                         ForEach(results) { event in
                             NavigationLink(value: event.id) {
                                 EventRow(event: event, creator: model.creator(id: event.creatorId))
@@ -62,11 +43,6 @@ struct DiscoverView: View {
             }
             .searchable(text: $query, prompt: "Search events")
             .refreshable { await model.refresh() }
-            .onChange(of: model.followedCreators.isEmpty) { isEmpty in
-                if isEmpty {
-                    filter = .all
-                }
-            }
         }
     }
 }
