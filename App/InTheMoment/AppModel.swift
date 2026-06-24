@@ -264,6 +264,10 @@ final class AppModel: ObservableObject {
         await perform { try await self.store.deleteEvent(id: id) }
     }
 
+    func removeMedia(_ mediaId: UUID, from eventId: UUID) async {
+        await perform { try await self.store.removeMedia(id: mediaId, fromEvent: eventId) }
+    }
+
     /// Resolves and presents an event opened via a ``DeepLink`` URL.
     func handle(url: URL) async {
         guard case .event(let id)? = DeepLink(url: url) else { return }

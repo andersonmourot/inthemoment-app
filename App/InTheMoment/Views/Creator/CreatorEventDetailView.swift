@@ -11,6 +11,7 @@ struct CreatorEventDetailView: View {
     @State private var showingEdit = false
     @State private var showingDeleteConfirmation = false
     @State private var selectedMedia: MediaItem?
+    @State private var mediaPendingRemoval: MediaItem?
 
     private var liveEvent: Event { model.event(id: event.id) ?? event }
 
@@ -28,7 +29,11 @@ struct CreatorEventDetailView: View {
                     )
                     .frame(height: 180)
                 } else {
-                    MediaGridView(media: liveEvent.media) { selectedMedia = $0 }
+                    MediaGridView(
+                        media: liveEvent.media,
+                        onTap: { selectedMedia = $0 },
+                        onDelete: { mediaPendingRemoval = $0 }
+                    )
                 }
             }
             .padding()
@@ -82,6 +87,21 @@ struct CreatorEventDetailView: View {
         } message: {
             Text("This removes the event and its media from EncoreMoment.")
         }
+        .confirmationDialog(
+            "Remove this media?",
+            isPresented: Binding(
+                get: { mediaPendingRemoval != nil },
+                set: { if !$0 { mediaPendingRemoval = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Remove Media", role: .destructive) {
+                removePendingMedia()
+            }
+            Button("Cancel", role: .cancel) { mediaPendingRemoval = nil }
+        } message: {
+            Text("This removes the selected photo or video from this event.")
+        }
         .fullScreenCover(item: $selectedMedia) { MediaDetailView(item: $0) }
     }
 
@@ -90,6 +110,14 @@ struct CreatorEventDetailView: View {
         Task {
             await model.deleteEvent(id)
             dismiss()
+        }
+    }
+
+    private func removePendingMedia() {
+        guard let item = mediaPendingRemoval else { return }
+        mediaPendingRemoval = nil
+        Task {
+            await model.removeMedia(item.id, from: liveEvent.id)
         }
     }
 

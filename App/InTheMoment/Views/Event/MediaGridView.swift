@@ -5,6 +5,7 @@ import InTheMomentCore
 struct MediaGridView: View {
     let media: [MediaItem]
     var onTap: (MediaItem) -> Void
+    var onDelete: ((MediaItem) -> Void)? = nil
 
     private let spacing: CGFloat = 6
     private var columns: [GridItem] {
@@ -18,6 +19,15 @@ struct MediaGridView: View {
                     MediaGridCell(item: item)
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    if let onDelete {
+                        Button(role: .destructive) {
+                            onDelete(item)
+                        } label: {
+                            Label("Remove Media", systemImage: "trash")
+                        }
+                    }
+                }
             }
         }
     }
