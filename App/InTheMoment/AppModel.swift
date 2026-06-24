@@ -275,6 +275,12 @@ final class AppModel: ObservableObject {
         await perform { try await self.store.removeMedia(id: mediaId, fromEvent: eventId) }
     }
 
+    func setCover(media: MediaItem, for eventId: UUID) async {
+        guard var event = await resolveEvent(id: eventId) else { return }
+        event.coverImageURL = media.previewURL
+        await updateEvent(event)
+    }
+
     /// Resolves and presents an event opened via a ``DeepLink`` URL.
     func handle(url: URL) async {
         guard case .event(let id)? = DeepLink(url: url) else { return }

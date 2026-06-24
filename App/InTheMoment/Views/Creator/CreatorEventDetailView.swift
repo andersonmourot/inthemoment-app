@@ -35,6 +35,9 @@ struct CreatorEventDetailView: View {
                     MediaGridView(
                         media: liveEvent.media,
                         onTap: { selectedMedia = $0 },
+                        onSetCover: { item in
+                            Task { await model.setCover(media: item, for: liveEvent.id) }
+                        },
                         onDelete: { mediaPendingRemoval = $0 }
                     )
                 }

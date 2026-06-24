@@ -491,7 +491,7 @@ private struct CreatorHeader: View {
                                 .controlSize(.mini)
                                 .tint(.white)
                         } else {
-                            Image(systemName: creator.avatarURL == nil ? "plus" : "camera.fill")
+                            Image(systemName: "plus")
                                 .font(.caption2.bold())
                                 .foregroundStyle(.white)
                         }
