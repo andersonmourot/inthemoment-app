@@ -12,6 +12,7 @@ struct EditEventView: View {
     @State private var location: String
     @State private var date: Date
     @State private var isPublished: Bool
+    @State private var allowsCommunityUploads: Bool
 
     init(event: Event) {
         self.event = event
@@ -20,6 +21,7 @@ struct EditEventView: View {
         _location = State(initialValue: event.location ?? "")
         _date = State(initialValue: event.date)
         _isPublished = State(initialValue: event.isPublished)
+        _allowsCommunityUploads = State(initialValue: event.allowsCommunityUploads)
     }
 
     private var canSave: Bool { Event.isValidTitle(title) }
@@ -41,6 +43,11 @@ struct EditEventView: View {
                 } footer: {
                     Text("Drafts are hidden from the public Discover feed.")
                 }
+                Section {
+                    Toggle("Let fans add media", isOn: $allowsCommunityUploads)
+                } footer: {
+                    Text("When enabled, signed-in users can add their own photos and videos to this event.")
+                }
             }
             .navigationTitle("Edit Event")
             .navigationBarTitleDisplayMode(.inline)
@@ -57,6 +64,7 @@ struct EditEventView: View {
                             updated.location = location.trimmedNonEmpty
                             updated.date = date
                             updated.isPublished = isPublished
+                            updated.allowsCommunityUploads = allowsCommunityUploads
                             await model.updateEvent(updated)
                             dismiss()
                         }

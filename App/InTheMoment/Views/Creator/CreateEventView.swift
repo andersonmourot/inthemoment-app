@@ -10,6 +10,7 @@ struct CreateEventView: View {
     @State private var details = ""
     @State private var location = ""
     @State private var date = Date()
+    @State private var allowsCommunityUploads = false
 
     private var canSave: Bool { Event.isValidTitle(title) }
 
@@ -25,6 +26,11 @@ struct CreateEventView: View {
                     TextField("Description", text: $details, axis: .vertical)
                         .lineLimit(3...6)
                 }
+                Section {
+                    Toggle("Let fans add media", isOn: $allowsCommunityUploads)
+                } footer: {
+                    Text("When enabled, signed-in users can add their own photos and videos to this event.")
+                }
             }
             .navigationTitle("New Event")
             .navigationBarTitleDisplayMode(.inline)
@@ -39,7 +45,8 @@ struct CreateEventView: View {
                                 title: title,
                                 details: details,
                                 location: location,
-                                date: date
+                                date: date,
+                                allowsCommunityUploads: allowsCommunityUploads
                             )
                             dismiss()
                         }

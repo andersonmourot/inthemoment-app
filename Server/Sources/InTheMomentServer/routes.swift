@@ -146,7 +146,7 @@ struct EventController: RouteCollection {
     func addMedia(req: Request) async throws -> MediaItem {
         let token = try req.auth.require(UserToken.self)
         guard let eventId = req.parameters.get("id", as: UUID.self) else { throw Abort(.badRequest) }
-        _ = try await Self.requireOwnedEvent(eventId, token: token, on: req.db)
+        try await Self.requireMediaUploadAllowed(eventId, token: token, on: req.db)
         let dto = try req.content.decode(MediaItem.self)
         let media = MediaModel(from: dto)
         media.$event.id = eventId
@@ -157,7 +157,7 @@ struct EventController: RouteCollection {
     func uploadMedia(req: Request) async throws -> MediaItem {
         let token = try req.auth.require(UserToken.self)
         guard let eventId = req.parameters.get("id", as: UUID.self) else { throw Abort(.badRequest) }
-        _ = try await Self.requireOwnedEvent(eventId, token: token, on: req.db)
+        try await Self.requireMediaUploadAllowed(eventId, token: token, on: req.db)
 
         let body = try req.content.decode(MediaUploadRequest.self)
         let mediaURL = try UploadStorage.save(
@@ -210,6 +210,15 @@ struct EventController: RouteCollection {
         guard let model = try await EventModel.find(id, on: db) else { throw Abort(.notFound) }
         guard model.creatorId == creatorId else { throw Abort(.forbidden) }
         return model
+    }
+
+    private static func requireMediaUploadAllowed(_ id: UUID, token: UserToken, on db: Database) async throws {
+        _ = try token.requireUserID()
+        guard let model = try await EventModel.find(id, on: db) else { throw Abort(.notFound) }
+        if token.creatorId == model.creatorId { return }
+        guard model.allowsCommunityUploads else {
+            throw Abort(.forbidden, reason: "This event does not allow community media uploads.")
+        }
     }
 
     private static func reload(_ id: UUID, on db: Database) async throws -> EventModel {

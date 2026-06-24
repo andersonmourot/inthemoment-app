@@ -169,14 +169,21 @@ final class AppModel: ObservableObject {
 
     // MARK: Mutations
 
-    func createEvent(title: String, details: String?, location: String?, date: Date) async {
+    func createEvent(
+        title: String,
+        details: String?,
+        location: String?,
+        date: Date,
+        allowsCommunityUploads: Bool = false
+    ) async {
         guard let creator = currentCreator else { return }
         let event = Event(
             creatorId: creator.id,
             title: title,
             details: details?.nilIfBlank,
             location: location?.nilIfBlank,
-            date: date
+            date: date,
+            allowsCommunityUploads: allowsCommunityUploads
         )
         await perform { try await self.store.createEvent(event) }
     }

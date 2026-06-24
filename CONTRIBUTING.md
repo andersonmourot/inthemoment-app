@@ -94,8 +94,8 @@ modify events owned by your creator.
 | `POST` | `/events` | required | attributed to your creator |
 | `PUT` | `/events/{id}` | required (owner) | replaces media set |
 | `DELETE` | `/events/{id}` | required (owner) | |
-| `POST` | `/events/{id}/uploads` | required (owner) | multipart `{ kind, file, thumbnail? }` upload; creates a `MediaItem` |
-| `POST` | `/events/{id}/media` | required (owner) | add one `MediaItem` |
+| `POST` | `/events/{id}/uploads` | required (owner or allowed contributor) | multipart `{ kind, file, thumbnail? }` upload; creates a `MediaItem` |
+| `POST` | `/events/{id}/media` | required (owner or allowed contributor) | add one `MediaItem` |
 | `DELETE` | `/events/{id}/media/{mediaId}` | required (owner) | |
 | `GET` | `/uploads/{filename}` | public | uploaded media bytes |
 | `GET` | `/creators` · `/creators/{id}` | public | |

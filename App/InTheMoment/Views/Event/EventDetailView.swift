@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import InTheMomentCore
 
 /// A single event page: header plus its grid of downloadable photos and videos.
@@ -10,6 +11,10 @@ struct EventDetailView: View {
     @State private var downloadMessage: String?
     @State private var likeSummary: LikeSummary?
     @State private var isTogglingLike = false
+    @State private var showingAuth = false
+    @State private var showingMediaPicker = false
+    @State private var mediaSelection: [PhotosPickerItem] = []
+    @State private var isImportingMedia = false
 
     /// Always read the freshest copy from the model so newly added media appears.
     private var liveEvent: Event { model.event(id: event.id) ?? event }
@@ -68,6 +73,24 @@ struct EventDetailView: View {
 
                 Divider()
 
+                if liveEvent.allowsCommunityUploads {
+                    Button {
+                        if model.isAccountSignedIn {
+                            showingMediaPicker = true
+                        } else {
+                            showingAuth = true
+                        }
+                    } label: {
+                        Label(
+                            isImportingMedia ? "Adding media..." : "Add your photos or videos",
+                            systemImage: "photo.badge.plus"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isImportingMedia)
+                }
+
                 if liveEvent.media.isEmpty {
                     ContentUnavailableViewCompat(
                         title: "No media yet",
@@ -115,6 +138,19 @@ struct EventDetailView: View {
             MediaDetailView(item: item) {
                 Task { await model.recordDownloads(eventID: liveEvent.id, count: 1) }
             }
+        }
+        .sheet(isPresented: $showingAuth) {
+            AuthView()
+        }
+        .photosPicker(
+            isPresented: $showingMediaPicker,
+            selection: $mediaSelection,
+            maxSelectionCount: 20,
+            matching: .any(of: [.images, .videos])
+        )
+        .onChange(of: mediaSelection) { items in
+            guard !items.isEmpty else { return }
+            Task { await importMedia(items) }
         }
         .alert("Download", isPresented: Binding(
             get: { downloadMessage != nil },
@@ -164,6 +200,19 @@ struct EventDetailView: View {
             } catch {
                 downloadMessage = error.localizedDescription
             }
+        }
+    }
+
+    private func importMedia(_ items: [PhotosPickerItem]) async {
+        isImportingMedia = true
+        defer {
+            isImportingMedia = false
+            mediaSelection = []
+        }
+        do {
+            try await EventMediaImporter.importItems(items, to: liveEvent.id, model: model)
+        } catch {
+            model.errorMessage = error.localizedDescription
         }
     }
 }

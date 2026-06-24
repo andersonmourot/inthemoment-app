@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import InTheMomentCore
 
 /// Creator's view of one of their events: same content as the public page plus an
@@ -7,11 +8,13 @@ struct CreatorEventDetailView: View {
     let event: Event
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @State private var showingAdd = false
     @State private var showingEdit = false
     @State private var showingDeleteConfirmation = false
     @State private var selectedMedia: MediaItem?
     @State private var mediaPendingRemoval: MediaItem?
+    @State private var mediaSelection: [PhotosPickerItem] = []
+    @State private var showingMediaPicker = false
+    @State private var isImportingMedia = false
 
     private var liveEvent: Event { model.event(id: event.id) ?? event }
 
@@ -42,7 +45,14 @@ struct CreatorEventDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showingAdd = true } label: { Label("Add", systemImage: "plus") }
+                Button { showingMediaPicker = true } label: {
+                    if isImportingMedia {
+                        ProgressView()
+                    } else {
+                        Label("Add", systemImage: "plus")
+                    }
+                }
+                .disabled(isImportingMedia)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -69,11 +79,18 @@ struct CreatorEventDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingAdd) {
-            AddMediaView(eventId: liveEvent.id)
-        }
         .sheet(isPresented: $showingEdit) {
             EditEventView(event: liveEvent)
+        }
+        .photosPicker(
+            isPresented: $showingMediaPicker,
+            selection: $mediaSelection,
+            maxSelectionCount: 20,
+            matching: .any(of: [.images, .videos])
+        )
+        .onChange(of: mediaSelection) { items in
+            guard !items.isEmpty else { return }
+            Task { await importMedia(items) }
         }
         .confirmationDialog(
             "Delete this event?",
@@ -117,6 +134,19 @@ struct CreatorEventDetailView: View {
         mediaPendingRemoval = nil
         Task {
             await model.removeMedia(item.id, from: liveEvent.id)
+        }
+    }
+
+    private func importMedia(_ items: [PhotosPickerItem]) async {
+        isImportingMedia = true
+        defer {
+            isImportingMedia = false
+            mediaSelection = []
+        }
+        do {
+            try await EventMediaImporter.importItems(items, to: liveEvent.id, model: model)
+        } catch {
+            model.errorMessage = error.localizedDescription
         }
     }
 
