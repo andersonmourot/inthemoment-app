@@ -117,24 +117,26 @@ private struct CommentRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Button {
-                    onReport()
+                Menu {
+                    Button {
+                        onReport()
+                    } label: {
+                        Label("Report", systemImage: "flag")
+                    }
+                    if canDelete {
+                        Button(role: .destructive) {
+                            Task { await onDelete() }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
                 } label: {
-                    Image(systemName: "flag")
-                        .font(.caption)
+                    Image(systemName: "ellipsis")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("Report comment")
-                if canDelete {
-                    Button(role: .destructive) {
-                        Task { await onDelete() }
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Delete comment")
-                }
+                .accessibilityLabel("Comment actions")
             }
             Text(comment.body)
                 .font(.body)
