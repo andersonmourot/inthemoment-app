@@ -16,6 +16,9 @@ public func configure(_ app: Application) async throws {
     ContentConfiguration.global.use(encoder: encoder, for: .json)
     ContentConfiguration.global.use(decoder: decoder, for: .json)
 
+    // Media/avatar uploads need to accept normal phone photos and short videos.
+    app.routes.defaultMaxBodySize = "100mb"
+
     // SQLite on a configurable path (a Fly volume in production).
     let dbPath = Environment.get("DATABASE_PATH") ?? "db.sqlite"
     app.databases.use(.sqlite(.file(dbPath)), as: .sqlite)

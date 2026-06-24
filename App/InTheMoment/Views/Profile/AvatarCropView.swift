@@ -116,7 +116,7 @@ struct AvatarCropView: View {
         }
     }
 
-    private func renderAvatarJPEG(outputSize: CGFloat = 512) -> Data? {
+    private func renderAvatarJPEG(outputSize: CGFloat = 384) -> Data? {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: outputSize, height: outputSize))
         let imageSize = image.size
         let baseScale = max(previewSize / imageSize.width, previewSize / imageSize.height)
@@ -133,6 +133,6 @@ struct AvatarCropView: View {
             context.fill(CGRect(x: 0, y: 0, width: outputSize, height: outputSize))
             image.draw(in: CGRect(origin: drawOrigin, size: drawSize))
         }
-        return rendered.jpegData(compressionQuality: 0.85)
+        return rendered.jpegData(compressionQuality: 0.78)
     }
 }
