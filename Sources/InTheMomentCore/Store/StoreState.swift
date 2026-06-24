@@ -77,6 +77,8 @@ public struct StoreState: Codable, Sendable, Equatable {
         guard item.eventId == eventId else {
             throw EventStoreError.validation("Media item's eventId does not match the target event.")
         }
+        var item = item
+        item.sortOrder = event.media.count
         event.media.append(item)
         events[eventId] = event
     }

@@ -147,7 +147,8 @@ struct EventController: RouteCollection {
         let token = try req.auth.require(UserToken.self)
         guard let eventId = req.parameters.get("id", as: UUID.self) else { throw Abort(.badRequest) }
         try await Self.requireMediaUploadAllowed(eventId, token: token, on: req.db)
-        let dto = try req.content.decode(MediaItem.self)
+        var dto = try req.content.decode(MediaItem.self)
+        dto.sortOrder = try await Self.nextSortOrder(eventId, on: req.db)
         let media = MediaModel(from: dto)
         media.$event.id = eventId
         try await media.create(on: req.db)
@@ -172,7 +173,8 @@ struct EventController: RouteCollection {
             eventId: eventId,
             kind: body.kind,
             url: mediaURL,
-            thumbnailURL: thumbnailURL ?? (body.kind == .photo ? mediaURL : nil)
+            thumbnailURL: thumbnailURL ?? (body.kind == .photo ? mediaURL : nil),
+            sortOrder: try await Self.nextSortOrder(eventId, on: req.db)
         )
         let media = MediaModel(from: dto)
         media.$event.id = eventId
@@ -219,6 +221,13 @@ struct EventController: RouteCollection {
         guard model.allowsCommunityUploads else {
             throw Abort(.forbidden, reason: "This event does not allow community media uploads.")
         }
+    }
+
+    private static func nextSortOrder(_ eventId: UUID, on db: Database) async throws -> Int {
+        let count = try await MediaModel.query(on: db)
+            .filter(\.$event.$id == eventId)
+            .count()
+        return count
     }
 
     private static func reload(_ id: UUID, on db: Database) async throws -> EventModel {

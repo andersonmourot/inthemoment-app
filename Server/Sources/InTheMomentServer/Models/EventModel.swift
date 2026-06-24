@@ -57,7 +57,12 @@ final class EventModel: Model, @unchecked Sendable {
             createdAt: createdAt,
             isPublished: isPublished,
             allowsCommunityUploads: allowsCommunityUploads,
-            media: ($media.value ?? []).map { $0.toDTO() }.sorted { $0.createdAt < $1.createdAt }
+            media: ($media.value ?? [])
+                .map { $0.toDTO() }
+                .sorted {
+                    if $0.sortOrder == $1.sortOrder { return $0.createdAt < $1.createdAt }
+                    return $0.sortOrder < $1.sortOrder
+                }
         )
     }
 }

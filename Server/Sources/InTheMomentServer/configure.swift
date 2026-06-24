@@ -34,6 +34,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateEvent())
     app.migrations.add(AddEventCommunityUploads())
     app.migrations.add(CreateMedia())
+    app.migrations.add(AddMediaSortOrder())
     app.migrations.add(CreateUser())
     app.migrations.add(MakeUserCreatorOptional())
     app.migrations.add(CreateFavorite())

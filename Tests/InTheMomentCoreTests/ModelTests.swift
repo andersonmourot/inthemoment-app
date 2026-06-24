@@ -43,6 +43,24 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(item.previewURL, full)
     }
 
+    func testMediaSortOrderDefaultsWhenMissing() throws {
+        let eventId = UUID()
+        let json = """
+        {
+          "id": "\(UUID().uuidString)",
+          "eventId": "\(eventId.uuidString)",
+          "kind": "photo",
+          "url": "https://x/photo.jpg",
+          "isDownloadable": true,
+          "createdAt": "2026-06-24T00:00:00Z"
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let item = try decoder.decode(MediaItem.self, from: json)
+        XCTAssertEqual(item.sortOrder, 0)
+    }
+
     func testCodableRoundTrip() throws {
         let event = SampleData.events[0]
         let data = try JSONEncoder().encode(event)

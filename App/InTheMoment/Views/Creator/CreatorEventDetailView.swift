@@ -9,6 +9,7 @@ struct CreatorEventDetailView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var showingEdit = false
+    @State private var showingManageMedia = false
     @State private var showingDeleteConfirmation = false
     @State private var selectedMedia: MediaItem?
     @State private var mediaPendingRemoval: MediaItem?
@@ -60,6 +61,9 @@ struct CreatorEventDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button { showingEdit = true } label: { Label("Edit details", systemImage: "pencil") }
+                    if !liveEvent.media.isEmpty {
+                        Button { showingManageMedia = true } label: { Label("Manage media", systemImage: "rectangle.stack") }
+                    }
                     Button {
                         Task { await model.setPublished(!liveEvent.isPublished, for: liveEvent.id) }
                     } label: {
@@ -84,6 +88,9 @@ struct CreatorEventDetailView: View {
         }
         .sheet(isPresented: $showingEdit) {
             EditEventView(event: liveEvent)
+        }
+        .sheet(isPresented: $showingManageMedia) {
+            ManageMediaView(event: liveEvent)
         }
         .photosPicker(
             isPresented: $showingMediaPicker,

@@ -1,6 +1,7 @@
 import Fluent
 import Foundation
 import InTheMomentCore
+import SQLKit
 
 final class MediaModel: Model, @unchecked Sendable {
     static let schema = "media"
@@ -15,6 +16,7 @@ final class MediaModel: Model, @unchecked Sendable {
     @OptionalField(key: "height") var height: Int?
     @OptionalField(key: "duration_seconds") var durationSeconds: Double?
     @Field(key: "is_downloadable") var isDownloadable: Bool
+    @Field(key: "sort_order") var sortOrder: Int
     @Field(key: "created_at") var createdAt: Date
 
     init() {}
@@ -30,6 +32,7 @@ final class MediaModel: Model, @unchecked Sendable {
         self.height = item.height
         self.durationSeconds = item.durationSeconds
         self.isDownloadable = item.isDownloadable
+        self.sortOrder = item.sortOrder
         self.createdAt = item.createdAt
     }
 
@@ -45,8 +48,23 @@ final class MediaModel: Model, @unchecked Sendable {
             height: height,
             durationSeconds: durationSeconds,
             isDownloadable: isDownloadable,
+            sortOrder: sortOrder,
             createdAt: createdAt
         )
+    }
+}
+
+struct AddMediaSortOrder: AsyncMigration {
+    func prepare(on database: Database) async throws {
+        guard let sql = database as? any SQLDatabase else { return }
+        try await sql.raw("""
+        ALTER TABLE \(unsafeRaw: MediaModel.schema)
+        ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0
+        """).run()
+    }
+
+    func revert(on database: Database) async throws {
+        // SQLite cannot drop columns on older versions; keep the additive column.
     }
 }
 
