@@ -8,6 +8,9 @@ struct RootTabView: View {
             DiscoverView()
                 .tabItem { Label("Discover", systemImage: "sparkles") }
 
+            FollowingFeedView()
+                .tabItem { Label("Following", systemImage: "person.2") }
+
             SavedView()
                 .tabItem { Label("Saved", systemImage: "heart") }
 
