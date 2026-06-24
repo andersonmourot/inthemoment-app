@@ -113,12 +113,19 @@ private struct ManageMediaRow: View {
                     .foregroundStyle(.secondary)
 
                     HStack {
-                        Button("Set as Cover", action: setCover)
-                            .font(.caption.weight(.semibold))
+                        Button(action: setCover) {
+                            Label("Set as Cover", systemImage: "photo")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.borderless)
                         Spacer()
-                        Button("Remove", role: .destructive, action: remove)
-                            .font(.caption.weight(.semibold))
+                        Button(role: .destructive, action: remove) {
+                            Label("Remove", systemImage: "trash")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.borderless)
                     }
+                    .labelStyle(.titleAndIcon)
                 }
             }
 
