@@ -138,10 +138,10 @@ struct ProfileView: View {
         avatarEditorImage = AvatarEditorImage(image: image)
     }
 
-    private func updateAvatar(with data: Data) async {
+    private func updateAvatar(with data: Data) async -> Bool {
         isUpdatingAvatar = true
         defer { isUpdatingAvatar = false }
-        await model.updateProfileImage(data: data, fileExtension: "jpg")
+        return await model.updateProfileImage(data: data, fileExtension: "jpg")
     }
 
     private var myEventsSection: some View {

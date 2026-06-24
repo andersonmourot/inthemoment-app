@@ -6,6 +6,7 @@ struct MediaUploadService {
     private let baseURL: URL
     private let tokenProvider: () -> String?
     private let decoder: JSONDecoder
+    private let errorDecoder = JSONDecoder()
 
     init(baseURL: URL = AppConfig.apiBaseURL, tokenProvider: @escaping () -> String? = { TokenHolder.shared.token }) {
         self.baseURL = baseURL
@@ -39,7 +40,7 @@ struct MediaUploadService {
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw UploadError.failed
+            throw uploadError(response: response, data: responseData)
         }
         return try decoder.decode(MediaItem.self, from: responseData)
     }
@@ -62,9 +63,15 @@ struct MediaUploadService {
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw UploadError.failed
+            throw uploadError(response: response, data: responseData)
         }
         return try decoder.decode(Creator.self, from: responseData)
+    }
+
+    private func uploadError(response: URLResponse, data: Data) -> UploadError {
+        let status = (response as? HTTPURLResponse)?.statusCode
+        let reason = (try? errorDecoder.decode(ServerError.self, from: data))?.reason
+        return UploadError.failed(status: status, reason: reason)
     }
 
     private func multipartBody(
@@ -127,8 +134,21 @@ struct MediaUploadService {
     }
 }
 
-private enum UploadError: Error {
-    case failed
+private struct ServerError: Decodable {
+    let reason: String?
+}
+
+enum UploadError: LocalizedError {
+    case failed(status: Int?, reason: String?)
+
+    var errorDescription: String? {
+        switch self {
+        case .failed(let status, let reason):
+            if let reason { return reason }
+            if let status { return "Upload failed with status \(status)." }
+            return "Upload failed. Please try again."
+        }
+    }
 }
 
 private extension Data {

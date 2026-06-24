@@ -202,7 +202,7 @@ final class AppModel: ObservableObject {
         await refresh()
     }
 
-    func updateProfileImage(data: Data, fileExtension: String) async {
+    func updateProfileImage(data: Data, fileExtension: String) async -> Bool {
         do {
             let creator = try await mediaUploadService.uploadAvatar(
                 data: data,
@@ -213,8 +213,10 @@ final class AppModel: ObservableObject {
             if !creators.contains(where: { $0.id == creator.id }) {
                 creators.append(creator)
             }
+            return true
         } catch {
-            errorMessage = "Couldn't update your profile picture. Please try again."
+            errorMessage = error.localizedDescription
+            return false
         }
     }
 

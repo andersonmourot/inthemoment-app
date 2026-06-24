@@ -3,7 +3,7 @@ import UIKit
 
 struct AvatarCropView: View {
     let image: UIImage
-    var onSave: (Data) async -> Void
+    var onSave: (Data) async -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @State private var scale: CGFloat = 1
@@ -110,9 +110,9 @@ struct AvatarCropView: View {
         guard let data = renderAvatarJPEG() else { return }
         isSaving = true
         Task {
-            await onSave(data)
+            let saved = await onSave(data)
             isSaving = false
-            dismiss()
+            if saved { dismiss() }
         }
     }
 

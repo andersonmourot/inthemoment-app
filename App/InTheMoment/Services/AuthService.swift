@@ -27,7 +27,12 @@ final class AuthService: ObservableObject {
     func restore() async -> Account? {
         guard let token = TokenHolder.shared.token else { return nil }
         do {
-            let account = try await client.me(token: token)
+            var account = try await client.me(token: token)
+            if let creator = account.creator,
+               let refreshed = try? await client.completeProfile(token: token, displayName: creator.displayName, handle: creator.handle) {
+                TokenHolder.shared.set(refreshed.token)
+                account = Account(id: refreshed.userId ?? account.id, email: account.email, creator: refreshed.creator ?? creator)
+            }
             self.account = account
             return account
         } catch {
