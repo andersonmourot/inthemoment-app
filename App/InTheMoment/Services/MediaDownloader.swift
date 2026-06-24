@@ -3,7 +3,7 @@ import Photos
 import InTheMomentCore
 
 /// Downloads a ``MediaItem``'s asset and saves it to the user's photo library so they
-/// can use it however they like (the core promise of In The Moment).
+/// can use it however they like (the core promise of EncoreMoment).
 enum MediaDownloader {
     enum DownloadError: LocalizedError {
         case notDownloadable

@@ -74,7 +74,7 @@ struct AuthView: View {
                     .disabled(auth.isWorking || !isValid)
                 }
             }
-            .navigationTitle(mode == .login ? "Welcome back" : "Join InTheMoment")
+            .navigationTitle(mode == .login ? "Welcome back" : "Join EncoreMoment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

@@ -1,4 +1,4 @@
-# In The Moment
+# EncoreMoment
 
 A native **SwiftUI** iOS app where artists and event companies post photos and
 videos from their events, and fans can browse and **download** them to use however

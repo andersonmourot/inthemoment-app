@@ -53,7 +53,7 @@ struct DiscoverView: View {
                     message: "Published events from creators will show up here."
                 )
             }
-            .navigationTitle("In The Moment")
+            .navigationTitle("EncoreMoment")
             .navigationDestination(for: UUID.self) { id in
                 if let event = model.event(id: id) {
                     EventDetailView(event: event)

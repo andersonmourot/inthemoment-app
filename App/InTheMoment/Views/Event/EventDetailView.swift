@@ -101,7 +101,7 @@ struct EventDetailView: View {
                 ShareLink(
                     item: DeepLink.event(liveEvent.id).webURL,
                     subject: Text(liveEvent.title),
-                    message: Text("Photos & videos from \(liveEvent.title) on In The Moment")
+                    message: Text("Photos & videos from \(liveEvent.title) on EncoreMoment")
                 ) {
                     Image(systemName: "square.and.arrow.up")
                 }

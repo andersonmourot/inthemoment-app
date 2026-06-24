@@ -1,6 +1,6 @@
 import Foundation
 
-/// Builds and parses links to content inside In The Moment.
+/// Builds and parses links to content inside EncoreMoment.
 ///
 /// Two URL shapes are supported for every destination:
 /// - a custom scheme for in-app deep links (`inthemoment://event/<id>`)

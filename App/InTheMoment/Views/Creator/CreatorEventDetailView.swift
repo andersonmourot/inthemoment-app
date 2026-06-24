@@ -80,7 +80,7 @@ struct CreatorEventDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes the event and its media from In The Moment.")
+            Text("This removes the event and its media from EncoreMoment.")
         }
         .fullScreenCover(item: $selectedMedia) { MediaDetailView(item: $0) }
     }

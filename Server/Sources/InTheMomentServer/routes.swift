@@ -3,7 +3,7 @@ import Fluent
 import InTheMomentCore
 
 func routes(_ app: Application) throws {
-    app.get { _ async in "InTheMoment API is up" }
+    app.get { _ async in "EncoreMoment API is up" }
     app.get("health") { _ async in ["status": "ok"] }
 
     try app.register(collection: UploadController())

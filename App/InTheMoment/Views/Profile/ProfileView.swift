@@ -63,7 +63,7 @@ struct ProfileView: View {
                     }
                 }
 
-                Section("Creators on InTheMoment") {
+                Section("Creators on EncoreMoment") {
                     ForEach(model.creators) { creator in
                         HStack {
                             Text(creator.displayName)
@@ -79,7 +79,7 @@ struct ProfileView: View {
                 }
 
                 Section {
-                    Text("In The Moment lets artists and event companies share photos and videos from their events for fans to view and download.")
+                    Text("EncoreMoment lets artists and event companies share photos and videos from their events for fans to view and download.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

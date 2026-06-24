@@ -23,7 +23,7 @@ targets:
     info:
       path: App/InTheMoment/Info.plist
       properties:
-        CFBundleDisplayName: In The Moment
+        CFBundleDisplayName: EncoreMoment
         UILaunchScreen: {}
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
