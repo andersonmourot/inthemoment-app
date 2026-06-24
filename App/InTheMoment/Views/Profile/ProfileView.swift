@@ -50,12 +50,14 @@ struct ProfileView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    Section("My Events") {
+                    Section {
                         Button {
                             showingProfileSetup = true
                         } label: {
                             Label("Complete Profile to Create Events", systemImage: "person.text.rectangle")
                         }
+                    } header: {
+                        Text("My Events")
                     } footer: {
                         Text("Add a display name and handle to start posting photos and videos from your events.")
                     }
@@ -133,7 +135,7 @@ struct ProfileView: View {
 
     private var myEventsSection: some View {
         let mine = model.myEvents()
-        return Section("My Events") {
+        return Section {
             Button {
                 showingCreateEvent = true
             } label: {
@@ -160,6 +162,8 @@ struct ProfileView: View {
                     }
                 }
             }
+        } header: {
+            Text("My Events")
         }
     }
 }
