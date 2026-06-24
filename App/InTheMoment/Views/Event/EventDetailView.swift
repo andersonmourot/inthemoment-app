@@ -146,7 +146,7 @@ struct EventDetailView: View {
             isPresented: $showingMediaPicker,
             selection: $mediaSelection,
             maxSelectionCount: 20,
-            matching: .any(of: [.images, .videos])
+            matching: PHPickerFilter.any(of: [PHPickerFilter.images, PHPickerFilter.videos])
         )
         .onChange(of: mediaSelection) { items in
             guard !items.isEmpty else { return }
@@ -210,10 +210,20 @@ struct EventDetailView: View {
             mediaSelection = []
         }
         do {
-            try await EventMediaImporter.importItems(items, to: liveEvent.id, model: model)
+            let importItems = try await makeImportItems(from: items)
+            try await EventMediaImporter.importItems(importItems, to: liveEvent.id, model: model)
         } catch {
             model.errorMessage = error.localizedDescription
         }
+    }
+
+    private func makeImportItems(from items: [PhotosPickerItem]) async throws -> [EventMediaImportItem] {
+        var importItems: [EventMediaImportItem] = []
+        for item in items {
+            guard let data = try await item.loadTransferable(type: Data.self) else { continue }
+            importItems.append(EventMediaImportItem(data: data, supportedContentTypes: item.supportedContentTypes))
+        }
+        return importItems
     }
 }
 

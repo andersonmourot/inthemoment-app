@@ -19,7 +19,7 @@ struct AddMediaView: View {
                 PhotosPicker(
                     selection: $selection,
                     maxSelectionCount: 20,
-                    matching: .any(of: [.images, .videos])
+                    matching: PHPickerFilter.any(of: [PHPickerFilter.images, PHPickerFilter.videos])
                 ) {
                     Label("Select photos or videos", systemImage: "photo.on.rectangle.angled")
                         .font(.headline)
@@ -57,10 +57,20 @@ struct AddMediaView: View {
         isImporting = true
         defer { isImporting = false }
         do {
-            try await EventMediaImporter.importItems(items, to: eventId, model: model)
+            let importItems = try await makeImportItems(from: items)
+            try await EventMediaImporter.importItems(importItems, to: eventId, model: model)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func makeImportItems(from items: [PhotosPickerItem]) async throws -> [EventMediaImportItem] {
+        var importItems: [EventMediaImportItem] = []
+        for item in items {
+            guard let data = try await item.loadTransferable(type: Data.self) else { continue }
+            importItems.append(EventMediaImportItem(data: data, supportedContentTypes: item.supportedContentTypes))
+        }
+        return importItems
     }
 }

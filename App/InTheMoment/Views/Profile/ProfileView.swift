@@ -82,11 +82,6 @@ struct ProfileView: View {
                     }
                 }
 
-                Section {
-                    Text("EncoreMoment lets artists and event companies share photos and videos from their events for fans to view and download.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
             }
             .navigationTitle("Profile")
             .toolbar {
@@ -422,6 +417,12 @@ private struct SettingsView: View {
                             Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                         }
                     }
+                }
+
+                Section {
+                    Text("EncoreMoment lets artists and event companies share photos and videos from their events for fans to view and download.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Settings")
