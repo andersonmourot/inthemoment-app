@@ -9,6 +9,7 @@ struct ProfileView: View {
     @EnvironmentObject private var auth: AuthService
     @State private var showingAuth = false
     @State private var showingSettings = false
+    @State private var showingEditProfile = false
     @State private var avatarSelection: PhotosPickerItem?
     @State private var isUpdatingAvatar = false
 
@@ -24,6 +25,11 @@ struct ProfileView: View {
                         )
                         if isUpdatingAvatar {
                             ProgressView("Updating profile picture...")
+                        }
+                        Button {
+                            showingEditProfile = true
+                        } label: {
+                            Label("Edit Profile", systemImage: "pencil")
                         }
                     }
                     signOutSection
@@ -65,14 +71,18 @@ struct ProfileView: View {
 
                 Section("Creators on EncoreMoment") {
                     ForEach(model.creators) { creator in
-                        HStack {
-                            Text(creator.displayName)
-                            if creator.isVerified {
-                                Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
-                            }
-                            Spacer()
-                            if creator.id == model.currentCreator?.id {
-                                Text("You").font(.caption).foregroundStyle(Color.appAccent)
+                        NavigationLink {
+                            CreatorProfileView(creator: creator)
+                        } label: {
+                            HStack {
+                                Text(creator.displayName)
+                                if creator.isVerified {
+                                    Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
+                                }
+                                Spacer()
+                                if creator.id == model.currentCreator?.id {
+                                    Text("You").font(.caption).foregroundStyle(Color.appAccent)
+                                }
                             }
                         }
                     }
@@ -101,6 +111,11 @@ struct ProfileView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
+            .sheet(isPresented: $showingEditProfile) {
+                if let creator = model.currentCreator {
+                    EditCreatorProfileView(creator: creator)
+                }
+            }
             .onChange(of: avatarSelection) { item in
                 guard let item else { return }
                 Task { await updateAvatar(with: item) }
@@ -127,6 +142,92 @@ struct ProfileView: View {
             } label: {
                 Text("Sign Out")
             }
+        }
+    }
+}
+
+private struct EditCreatorProfileView: View {
+    let creator: Creator
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var displayName: String
+    @State private var handle: String
+    @State private var bio: String
+    @State private var isSaving = false
+
+    init(creator: Creator) {
+        self.creator = creator
+        _displayName = State(initialValue: creator.displayName)
+        _handle = State(initialValue: creator.handle)
+        _bio = State(initialValue: creator.bio ?? "")
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Display name", text: $displayName)
+                    TextField("Handle", text: $handle)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Text("Handle must be 3-30 characters using only lowercase letters, numbers, and underscores.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Profile")
+                }
+
+                Section {
+                    TextField("Bio", text: $bio, axis: .vertical)
+                        .lineLimit(3...6)
+                } footer: {
+                    Text("Tell fans what kind of events or media you share.")
+                }
+
+                if let error = model.errorMessage {
+                    Section {
+                        Text(error).foregroundStyle(.red).font(.footnote)
+                    }
+                }
+            }
+            .navigationTitle("Edit Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        save()
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(isSaving || !isValid)
+                }
+            }
+        }
+    }
+
+    private var isValid: Bool {
+        !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && Creator.isValidHandle(handle)
+    }
+
+    private func save() {
+        isSaving = true
+        Task {
+            let saved = await model.updateCurrentCreatorProfile(
+                displayName: displayName,
+                handle: handle,
+                bio: bio
+            )
+            isSaving = false
+            if saved { dismiss() }
         }
     }
 }

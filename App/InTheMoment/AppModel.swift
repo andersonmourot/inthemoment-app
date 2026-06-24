@@ -218,6 +218,36 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func updateCurrentCreatorProfile(displayName: String, handle: String, bio: String?) async -> Bool {
+        guard var creator = currentCreator else { return false }
+        let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            errorMessage = "Display name is required."
+            return false
+        }
+        guard Creator.isValidHandle(handle) else {
+            errorMessage = "Handle must be 3-30 lowercase letters, numbers, or underscores."
+            return false
+        }
+
+        creator.displayName = trimmedName
+        creator.handle = handle
+        creator.bio = bio?.nilIfBlank
+        do {
+            try await store.upsertCreator(creator)
+            currentCreator = creator
+            creators = creators.map { $0.id == creator.id ? creator : $0 }
+            if !creators.contains(where: { $0.id == creator.id }) {
+                creators.append(creator)
+            }
+            await refresh()
+            return true
+        } catch {
+            errorMessage = "Couldn't update your profile. Please try again."
+            return false
+        }
+    }
+
     func updateEvent(_ event: Event) async {
         await perform { try await self.store.updateEvent(event) }
     }

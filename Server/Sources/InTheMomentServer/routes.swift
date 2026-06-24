@@ -47,7 +47,14 @@ struct CreatorController: RouteCollection {
 
         let dto = try req.content.decode(Creator.self)
         guard Creator.isValidHandle(dto.handle) else {
-            throw Abort(.unprocessableEntity, reason: "Invalid handle")
+            throw Abort(.unprocessableEntity, reason: "Handle must be 3–30 lowercase letters, digits or underscores.")
+        }
+        guard !dto.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw Abort(.unprocessableEntity, reason: "Display name is required.")
+        }
+        if let taken = try await CreatorModel.query(on: req.db).filter(\.$handle == dto.handle).first(),
+           taken.id != existing.id {
+            throw Abort(.conflict, reason: "That handle is taken.")
         }
         existing.apply(dto)
         try await existing.save(on: req.db)

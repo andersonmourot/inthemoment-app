@@ -23,6 +23,7 @@
 		7CA33BE24D7F6B7396CA53BC /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1133F97AF61BAD1F4CA8BBCA /* AppModel.swift */; };
 		7FE55D201B093AFEB2AD51F1 /* TokenHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF2B61D0381BC3C5FDF75B04 /* TokenHolder.swift */; };
 		88510F369E3D062BC322FCE0 /* VideoThumbnailGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D58C988DAC62E7CBB938BC8 /* VideoThumbnailGenerator.swift */; };
+		A5598E400BE58C9D2FE3A54D /* CreatorProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7051A1DC2AC05D637C7C43FA /* CreatorProfileView.swift */; };
 		A7F3E840DBADEE01105D6547 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F2B9404C82FFB11FFDF942 /* RootTabView.swift */; };
 		ABD5CE3C20EE51396966AB46 /* InTheMomentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71F38CFEE702E3E79AB67DF0 /* InTheMomentApp.swift */; };
 		B0EC2EC6661C93F1636E2701 /* MyEventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F355E818EB52D3EEAF6F8A /* MyEventsView.swift */; };
@@ -50,6 +51,7 @@
 		467EC698C312D14C6578CA2B /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		602B65177A363C53AD91A495 /* StateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateViews.swift; sourceTree = "<group>"; };
 		640FCDA751E26FC0E14B7E39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7051A1DC2AC05D637C7C43FA /* CreatorProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatorProfileView.swift; sourceTree = "<group>"; };
 		71F38CFEE702E3E79AB67DF0 /* InTheMomentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InTheMomentApp.swift; sourceTree = "<group>"; };
 		82767A536B5865B775F3AFEA /* InTheMoment.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = InTheMoment.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8BA0F53027D9BA96BDA23918 /* EventDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventDetailView.swift; sourceTree = "<group>"; };
@@ -123,6 +125,7 @@
 		4130201579F36042F2BCD1A2 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				7051A1DC2AC05D637C7C43FA /* CreatorProfileView.swift */,
 				34A83BC1A57A3979C2BFF8BF /* ProfileView.swift */,
 			);
 			path = Profile;
@@ -309,6 +312,7 @@
 				F2F5B5E2C074C0FCB5C03672 /* ContentUnavailableViewCompat.swift in Sources */,
 				BF0F38E542782DBE6AB343CC /* CreateEventView.swift in Sources */,
 				D61A56B3AE42E33FA3717F4A /* CreatorEventDetailView.swift in Sources */,
+				A5598E400BE58C9D2FE3A54D /* CreatorProfileView.swift in Sources */,
 				258F346FDA0B5B167C9E804C /* DiscoverView.swift in Sources */,
 				185278575EE8F9F4E1A52953 /* EditEventView.swift in Sources */,
 				6C2300DAA882DD230B0F93B2 /* EventDetailView.swift in Sources */,

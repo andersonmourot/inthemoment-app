@@ -28,7 +28,11 @@ struct EventDetailView: View {
                     Text(liveEvent.title).font(.title2.bold())
                     if let creator = model.creator(id: liveEvent.creatorId) {
                         HStack {
-                            Text(creator.displayHandle).foregroundStyle(Color.appAccent)
+                            NavigationLink {
+                                CreatorProfileView(creator: creator)
+                            } label: {
+                                Text(creator.displayHandle).foregroundStyle(Color.appAccent)
+                            }
                             Spacer()
                             FollowButton(creator: creator)
                         }
