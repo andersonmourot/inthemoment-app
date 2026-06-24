@@ -10,6 +10,8 @@ struct ProfileView: View {
     @State private var showingAuth = false
     @State private var showingSettings = false
     @State private var showingEditProfile = false
+    @State private var showingCreateEvent = false
+    @State private var showingProfileSetup = false
     @State private var avatarSelection: PhotosPickerItem?
     @State private var isUpdatingAvatar = false
 
@@ -32,7 +34,7 @@ struct ProfileView: View {
                             Label("Edit Profile", systemImage: "pencil")
                         }
                     }
-                    signOutSection
+                    myEventsSection
                 } else if let email = model.signedInEmail {
                     Section {
                         VStack(alignment: .leading, spacing: 4) {
@@ -48,7 +50,15 @@ struct ProfileView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    signOutSection
+                    Section("My Events") {
+                        Button {
+                            showingProfileSetup = true
+                        } label: {
+                            Label("Complete Profile to Create Events", systemImage: "person.text.rectangle")
+                        }
+                    } footer: {
+                        Text("Add a display name and handle to start posting photos and videos from your events.")
+                    }
                 } else {
                     Section {
                         VStack(alignment: .leading, spacing: 8) {
@@ -97,6 +107,12 @@ struct ProfileView: View {
                     EditCreatorProfileView(creator: creator)
                 }
             }
+            .sheet(isPresented: $showingCreateEvent) {
+                CreateEventView()
+            }
+            .sheet(isPresented: $showingProfileSetup) {
+                ProfileCompleteProfileView()
+            }
             .onChange(of: avatarSelection) { item in
                 guard let item else { return }
                 Task { await updateAvatar(with: item) }
@@ -115,13 +131,34 @@ struct ProfileView: View {
         await model.updateProfileImage(data: data, fileExtension: ext)
     }
 
-    private var signOutSection: some View {
-        Section {
-            Button(role: .destructive) {
-                auth.logout()
-                Task { await model.didSignOut() }
+    private var myEventsSection: some View {
+        let mine = model.myEvents()
+        return Section("My Events") {
+            Button {
+                showingCreateEvent = true
             } label: {
-                Text("Sign Out")
+                Label("Create Event", systemImage: "plus")
+            }
+
+            if mine.isEmpty {
+                Text("No events yet. Create an event page to start posting photos and videos.")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(mine) { event in
+                    NavigationLink {
+                        CreatorEventDetailView(event: event)
+                    } label: {
+                        ProfileEventRow(event: event, stats: model.stats(for: event.id))
+                    }
+                }
+                .onDelete { offsets in
+                    let ids = offsets.map { mine[$0].id }
+                    Task {
+                        for id in ids {
+                            await model.deleteEvent(id)
+                        }
+                    }
+                }
             }
         }
     }
@@ -213,9 +250,114 @@ private struct EditCreatorProfileView: View {
     }
 }
 
+private struct ProfileCompleteProfileView: View {
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var auth: AuthService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var displayName = ""
+    @State private var handle = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Display name", text: $displayName)
+                    TextField("Handle (e.g. aurora_live)", text: $handle)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Text("Handle must be 3-30 characters using only lowercase letters, numbers, and underscores.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } footer: {
+                    Text("This profile lets your signed-in account create and manage events.")
+                }
+
+                if let error = auth.errorMessage {
+                    Section {
+                        Text(error).foregroundStyle(.red).font(.footnote)
+                    }
+                }
+
+                Section {
+                    Button(action: submit) {
+                        HStack {
+                            Spacer()
+                            if auth.isWorking {
+                                ProgressView()
+                            } else {
+                                Text("Save Profile").bold()
+                            }
+                            Spacer()
+                        }
+                    }
+                    .disabled(auth.isWorking || !isValid)
+                }
+            }
+            .navigationTitle("Complete Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var isValid: Bool {
+        !displayName.trimmingCharacters(in: .whitespaces).isEmpty && Creator.isValidHandle(handle)
+    }
+
+    private func submit() {
+        Task {
+            if let account = await auth.completeProfile(displayName: displayName, handle: handle) {
+                await model.didSignIn(account)
+                dismiss()
+            }
+        }
+    }
+}
+
+private struct ProfileEventRow: View {
+    let event: Event
+    let stats: EventStats
+
+    var body: some View {
+        HStack(spacing: 12) {
+            RemoteImage(url: event.displayCoverURL)
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(event.title).font(.headline)
+                    if !event.isPublished {
+                        Text("Draft")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.secondary.opacity(0.2), in: Capsule())
+                    }
+                }
+                Text("\(event.mediaCount) items - \(event.date.eventDayString)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    Label("\(stats.views)", systemImage: "eye")
+                    Label("\(stats.downloads)", systemImage: "square.and.arrow.down")
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
 private struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var model: AppModel
+    @EnvironmentObject private var auth: AuthService
     @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.light.rawValue
+    @State private var showingLogoutConfirmation = false
 
     private var selectedTheme: Binding<AppTheme> {
         Binding {
@@ -251,6 +393,16 @@ private struct SettingsView: View {
                 } header: {
                     Text("About")
                 }
+
+                if auth.isAuthenticated {
+                    Section {
+                        Button(role: .destructive) {
+                            showingLogoutConfirmation = true
+                        } label: {
+                            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    }
+                }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -261,6 +413,18 @@ private struct SettingsView: View {
             }
         }
         .preferredColorScheme(appTheme.colorScheme)
+        .confirmationDialog(
+            "Sign out?",
+            isPresented: $showingLogoutConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Sign Out", role: .destructive) {
+                signOut()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You can sign back in at any time.")
+        }
     }
 
     private var appVersion: String {
@@ -273,6 +437,14 @@ private struct SettingsView: View {
             return version
         default:
             return "Unknown"
+        }
+    }
+
+    private func signOut() {
+        auth.logout()
+        Task {
+            await model.didSignOut()
+            dismiss()
         }
     }
 }
