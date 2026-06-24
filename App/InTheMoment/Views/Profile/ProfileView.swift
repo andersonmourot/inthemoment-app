@@ -13,6 +13,7 @@ struct ProfileView: View {
     @State private var showingCreateEvent = false
     @State private var showingProfileSetup = false
     @State private var avatarSelection: PhotosPickerItem?
+    @State private var avatarEditorImage: AvatarEditorImage?
     @State private var isUpdatingAvatar = false
 
     var body: some View {
@@ -115,22 +116,32 @@ struct ProfileView: View {
             .sheet(isPresented: $showingProfileSetup) {
                 ProfileCompleteProfileView()
             }
+            .sheet(item: $avatarEditorImage) { editorImage in
+                AvatarCropView(image: editorImage.image) { data in
+                    await updateAvatar(with: data)
+                }
+            }
             .onChange(of: avatarSelection) { item in
                 guard let item else { return }
-                Task { await updateAvatar(with: item) }
+                Task { await prepareAvatarEditor(with: item) }
             }
         }
     }
 
-    private func updateAvatar(with item: PhotosPickerItem) async {
-        isUpdatingAvatar = true
-        defer {
-            isUpdatingAvatar = false
-            avatarSelection = nil
+    private func prepareAvatarEditor(with item: PhotosPickerItem) async {
+        defer { avatarSelection = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let image = UIImage(data: data) else {
+            model.errorMessage = "Couldn't load that image. Please try another photo."
+            return
         }
-        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
-        let ext = item.supportedContentTypes.first?.preferredFilenameExtension ?? "jpg"
-        await model.updateProfileImage(data: data, fileExtension: ext)
+        avatarEditorImage = AvatarEditorImage(image: image)
+    }
+
+    private func updateAvatar(with data: Data) async {
+        isUpdatingAvatar = true
+        defer { isUpdatingAvatar = false }
+        await model.updateProfileImage(data: data, fileExtension: "jpg")
     }
 
     private var myEventsSection: some View {
@@ -166,6 +177,11 @@ struct ProfileView: View {
             Text("My Events")
         }
     }
+}
+
+private struct AvatarEditorImage: Identifiable {
+    let id = UUID()
+    let image: UIImage
 }
 
 private struct EditCreatorProfileView: View {
