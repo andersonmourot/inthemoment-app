@@ -18,6 +18,18 @@ struct AuthView: View {
     @State private var displayName = ""
     @State private var handle = ""
 
+    private var normalizedEmail: String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private var normalizedHandle: String {
+        handle
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -44,9 +56,15 @@ struct AuthView: View {
                         TextField("Handle (e.g. aurora_live)", text: $handle)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                        Text("Handle must be 3-30 characters using only lowercase letters, numbers, and underscores.")
+                            .onChange(of: handle) { newValue in
+                                let cleaned = normalizeHandleInput(newValue)
+                                if cleaned != newValue {
+                                    handle = cleaned
+                                }
+                            }
+                        Text(handleHelpText)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Creator.isValidHandle(normalizedHandle) ? .secondary : .orange)
                     } header: {
                         Text("Your profile")
                     } footer: {
@@ -88,12 +106,30 @@ struct AuthView: View {
     }
 
     private var isValid: Bool {
-        let base = email.contains("@") && password.count >= 8
+        let base = normalizedEmail.contains("@") && password.count >= 8
         if mode == .register {
             return base && !displayName.trimmingCharacters(in: .whitespaces).isEmpty
-                && Creator.isValidHandle(handle)
+                && Creator.isValidHandle(normalizedHandle)
         }
         return base
+    }
+
+    private var handleHelpText: String {
+        if handle.isEmpty {
+            return "Handle must be 3-30 characters using only lowercase letters, numbers, and underscores."
+        }
+        if Creator.isValidHandle(normalizedHandle) {
+            return "Your handle will be @\(normalizedHandle)."
+        }
+        return "Use 3-30 lowercase letters, numbers, or underscores."
+    }
+
+    private func normalizeHandleInput(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "@"))
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "_")
     }
 
     private func submit() {
@@ -101,9 +137,14 @@ struct AuthView: View {
             let account: Account?
             switch mode {
             case .login:
-                account = await auth.login(email: email, password: password)
+                account = await auth.login(email: normalizedEmail, password: password)
             case .register:
-                account = await auth.register(email: email, password: password, displayName: displayName, handle: handle)
+                account = await auth.register(
+                    email: normalizedEmail,
+                    password: password,
+                    displayName: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
+                    handle: normalizedHandle
+                )
             }
             if let account {
                 await model.didSignIn(account)
