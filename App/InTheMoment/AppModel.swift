@@ -452,6 +452,15 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func moderationReports() async -> [Report] {
+        do {
+            return try await reportService.reports()
+        } catch {
+            errorMessage = error.localizedDescription
+            return []
+        }
+    }
+
     private func perform(_ action: @escaping () async throws -> Void) async {
         do {
             try await action()

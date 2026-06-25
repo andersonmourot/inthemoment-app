@@ -26,6 +26,19 @@ final class ReportModel: Model, @unchecked Sendable {
         self.details = request.details
         self.createdAt = createdAt
     }
+
+    func toDTO() -> Report {
+        Report(
+            id: id ?? UUID(),
+            reporterID: userId,
+            targetType: ReportTargetType(rawValue: targetType) ?? .event,
+            targetID: targetId,
+            eventID: eventId,
+            reason: ReportReason(rawValue: reason) ?? .other,
+            details: details,
+            createdAt: createdAt
+        )
+    }
 }
 
 struct CreateReport: AsyncMigration {

@@ -473,6 +473,18 @@ private struct SettingsView: View {
                     Text("About")
                 }
 
+                if model.currentCreator != nil {
+                    Section {
+                        NavigationLink {
+                            ReportsView()
+                        } label: {
+                            Label("Reports", systemImage: "flag")
+                        }
+                    } header: {
+                        Text("Moderation")
+                    }
+                }
+
                 if auth.isAuthenticated {
                     Section {
                         Button(role: .destructive) {
