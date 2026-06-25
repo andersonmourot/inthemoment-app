@@ -3,6 +3,7 @@ import InTheMomentCore
 
 struct NotificationsView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         List {
@@ -26,6 +27,9 @@ struct NotificationsView: View {
         }
         .navigationTitle("Notifications")
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Done") { dismiss() }
+            }
             if model.unreadNotificationCount > 0 {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Mark All Read") {
