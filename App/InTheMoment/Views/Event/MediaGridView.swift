@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import InTheMomentCore
 
 /// Square thumbnail grid of an event's media.
@@ -7,6 +8,9 @@ struct MediaGridView: View {
     var onTap: (MediaItem) -> Void
     var onSetCover: ((MediaItem) -> Void)? = nil
     var onDelete: ((MediaItem) -> Void)? = nil
+    var onReorder: (([MediaItem]) -> Void)? = nil
+    var onReorderFinished: (() -> Void)? = nil
+    @State private var draggedItem: MediaItem?
 
     private let spacing: CGFloat = 6
     private var columns: [GridItem] {
@@ -20,6 +24,21 @@ struct MediaGridView: View {
                     MediaGridCell(item: item)
                 }
                 .buttonStyle(.plain)
+                .onDrag {
+                    guard onReorder != nil else { return NSItemProvider() }
+                    draggedItem = item
+                    return NSItemProvider(object: item.id.uuidString as NSString)
+                }
+                .onDrop(
+                    of: [UTType.text],
+                    delegate: MediaGridDropDelegate(
+                        item: item,
+                        media: media,
+                        draggedItem: $draggedItem,
+                        onReorder: onReorder,
+                        onReorderFinished: onReorderFinished
+                    )
+                )
                 .contextMenu {
                     if let onSetCover {
                         Button {
@@ -38,6 +57,34 @@ struct MediaGridView: View {
                 }
             }
         }
+    }
+}
+
+private struct MediaGridDropDelegate: DropDelegate {
+    let item: MediaItem
+    let media: [MediaItem]
+    @Binding var draggedItem: MediaItem?
+    var onReorder: (([MediaItem]) -> Void)?
+    var onReorderFinished: (() -> Void)?
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem,
+              draggedItem != item,
+              let from = media.firstIndex(of: draggedItem),
+              let to = media.firstIndex(of: item) else { return }
+
+        var updated = media
+        updated.move(
+            fromOffsets: IndexSet(integer: from),
+            toOffset: to > from ? to + 1 : to
+        )
+        onReorder?(updated)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        onReorderFinished?()
+        return true
     }
 }
 

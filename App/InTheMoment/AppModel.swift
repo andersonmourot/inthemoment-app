@@ -308,6 +308,16 @@ final class AppModel: ObservableObject {
         await updateEvent(event)
     }
 
+    func reorderMedia(_ media: [MediaItem], in eventId: UUID) async {
+        guard var event = await resolveEvent(id: eventId) else { return }
+        event.media = media.enumerated().map { index, item in
+            var copy = item
+            copy.sortOrder = index
+            return copy
+        }
+        await updateEvent(event)
+    }
+
     /// Resolves and presents an event opened via a ``DeepLink`` URL.
     func handle(url: URL) async {
         guard case .event(let id)? = DeepLink(url: url) else { return }

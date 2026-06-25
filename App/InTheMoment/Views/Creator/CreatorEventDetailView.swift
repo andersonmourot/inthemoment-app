@@ -16,8 +16,10 @@ struct CreatorEventDetailView: View {
     @State private var mediaSelection: [PhotosPickerItem] = []
     @State private var showingMediaPicker = false
     @State private var isImportingMedia = false
+    @State private var reorderedMedia: [MediaItem]?
 
     private var liveEvent: Event { model.event(id: event.id) ?? event }
+    private var visibleMedia: [MediaItem] { reorderedMedia ?? liveEvent.media }
 
     var body: some View {
         ScrollView {
@@ -25,7 +27,7 @@ struct CreatorEventDetailView: View {
                 header
                 statsCard
                 Divider()
-                if liveEvent.media.isEmpty {
+                if visibleMedia.isEmpty {
                     ContentUnavailableViewCompat(
                         title: "No media yet",
                         systemImage: "photo.badge.plus",
@@ -34,12 +36,14 @@ struct CreatorEventDetailView: View {
                     .frame(height: 180)
                 } else {
                     MediaGridView(
-                        media: liveEvent.media,
+                        media: visibleMedia,
                         onTap: { selectedMedia = $0 },
                         onSetCover: { item in
                             Task { await model.setCover(media: item, for: liveEvent.id) }
                         },
-                        onDelete: { mediaPendingRemoval = $0 }
+                        onDelete: { mediaPendingRemoval = $0 },
+                        onReorder: { reorderedMedia = $0 },
+                        onReorderFinished: { persistMediaOrder() }
                     )
                 }
             }
@@ -144,6 +148,14 @@ struct CreatorEventDetailView: View {
         mediaPendingRemoval = nil
         Task {
             await model.removeMedia(item.id, from: liveEvent.id)
+        }
+    }
+
+    private func persistMediaOrder() {
+        guard let reorderedMedia else { return }
+        Task {
+            await model.reorderMedia(reorderedMedia, in: liveEvent.id)
+            self.reorderedMedia = nil
         }
     }
 
