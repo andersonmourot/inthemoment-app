@@ -37,7 +37,7 @@ struct SocialController: RouteCollection {
         let token = try req.auth.require(UserToken.self)
         let userId = try token.requireUserID()
         let eventId = try id(req)
-        guard try await EventModel.find(eventId, on: req.db) != nil else { throw Abort(.notFound) }
+        guard let event = try await EventModel.find(eventId, on: req.db) else { throw Abort(.notFound) }
 
         let text = try req.content.decode(CommentBody.self).body.trimmingCharacters(in: .whitespacesAndNewlines)
         guard Comment.isValidBody(text) else {
@@ -47,6 +47,16 @@ struct SocialController: RouteCollection {
         let name = try await Self.authorName(for: userId, on: req.db)
         let model = CommentModel(eventId: eventId, userId: userId, authorName: name, body: text)
         try await model.create(on: req.db)
+        if token.creatorId != event.creatorId {
+            try await NotificationCenter.notifyCreator(
+                creatorId: event.creatorId,
+                kind: .comment,
+                title: "New comment",
+                body: "\(name) commented on \(event.title).",
+                eventId: eventId,
+                on: req.db
+            )
+        }
         return model.toDTO()
     }
 
@@ -83,7 +93,7 @@ struct SocialController: RouteCollection {
         let token = try req.auth.require(UserToken.self)
         let userId = try token.requireUserID()
         let eventId = try id(req)
-        guard try await EventModel.find(eventId, on: req.db) != nil else { throw Abort(.notFound) }
+        guard let event = try await EventModel.find(eventId, on: req.db) else { throw Abort(.notFound) }
 
         let existing = try await EventLikeModel.query(on: req.db)
             .filter(\.$eventId == eventId)
@@ -91,6 +101,16 @@ struct SocialController: RouteCollection {
             .first()
         if existing == nil {
             try await EventLikeModel(eventId: eventId, userId: userId).create(on: req.db)
+            if token.creatorId != event.creatorId {
+                try await NotificationCenter.notifyCreator(
+                    creatorId: event.creatorId,
+                    kind: .like,
+                    title: "New like",
+                    body: "Someone liked \(event.title).",
+                    eventId: eventId,
+                    on: req.db
+                )
+            }
         }
         return try await Self.summary(eventId: eventId, viewerId: userId, on: req.db)
     }

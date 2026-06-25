@@ -59,7 +59,19 @@ struct FanController: RouteCollection {
         let creatorId = try param(req, "creatorId")
         let exists = try await FollowModel.query(on: req.db)
             .filter(\.$userId == uid).filter(\.$creatorId == creatorId).first() != nil
-        if !exists { try await FollowModel(userId: uid, creatorId: creatorId).create(on: req.db) }
+        if !exists {
+            try await FollowModel(userId: uid, creatorId: creatorId).create(on: req.db)
+            if let followedUser = try await UserModel.query(on: req.db).filter(\.$creatorId == creatorId).first(),
+               followedUser.id != uid {
+                try await NotificationCenter.notifyCreator(
+                    creatorId: creatorId,
+                    kind: .follow,
+                    title: "New follower",
+                    body: "Someone followed your creator profile.",
+                    on: req.db
+                )
+            }
+        }
         return try await Self.load(for: uid, on: req.db)
     }
 

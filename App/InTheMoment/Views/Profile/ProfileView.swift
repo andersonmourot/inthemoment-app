@@ -12,6 +12,7 @@ struct ProfileView: View {
     @State private var showingEditProfile = false
     @State private var showingCreateEvent = false
     @State private var showingProfileSetup = false
+    @State private var showingNotifications = false
     @State private var avatarSelection: PhotosPickerItem?
     @State private var avatarEditorImage: AvatarEditorImage?
     @State private var isUpdatingAvatar = false
@@ -84,6 +85,22 @@ struct ProfileView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        showingNotifications = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell")
+                            if model.unreadNotificationCount > 0 {
+                                Circle()
+                                    .fill(.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 4, y: -4)
+                            }
+                        }
+                    }
+                    .accessibilityLabel("Notifications")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
                         showingSettings = true
                     } label: {
                         Image(systemName: "gearshape")
@@ -96,6 +113,11 @@ struct ProfileView: View {
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
+            }
+            .sheet(isPresented: $showingNotifications) {
+                NavigationStack {
+                    NotificationsView()
+                }
             }
             .sheet(isPresented: $showingEditProfile) {
                 if let creator = model.currentCreator {

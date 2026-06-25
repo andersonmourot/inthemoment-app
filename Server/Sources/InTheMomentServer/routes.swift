@@ -14,6 +14,7 @@ func routes(_ app: Application) throws {
     try app.register(collection: AnalyticsController())
     try app.register(collection: SocialController())
     try app.register(collection: ReportController())
+    try app.register(collection: NotificationController())
 }
 
 struct CreatorController: RouteCollection {
@@ -153,6 +154,7 @@ struct EventController: RouteCollection {
         let media = MediaModel(from: dto)
         media.$event.id = eventId
         try await media.create(on: req.db)
+        try await Self.notifyCommunityUploadIfNeeded(eventId, token: token, on: req.db)
         return media.toDTO()
     }
 
@@ -180,6 +182,7 @@ struct EventController: RouteCollection {
         let media = MediaModel(from: dto)
         media.$event.id = eventId
         try await media.create(on: req.db)
+        try await Self.notifyCommunityUploadIfNeeded(eventId, token: token, on: req.db)
         return media.toDTO()
     }
 
@@ -229,6 +232,19 @@ struct EventController: RouteCollection {
             .filter(\.$event.$id == eventId)
             .count()
         return count
+    }
+
+    private static func notifyCommunityUploadIfNeeded(_ eventId: UUID, token: UserToken, on db: Database) async throws {
+        guard let event = try await EventModel.find(eventId, on: db),
+              token.creatorId != event.creatorId else { return }
+        try await NotificationCenter.notifyCreator(
+            creatorId: event.creatorId,
+            kind: .mediaUpload,
+            title: "New media added",
+            body: "Someone added media to \(event.title).",
+            eventId: eventId,
+            on: db
+        )
     }
 
     private static func reload(_ id: UUID, on db: Database) async throws -> EventModel {

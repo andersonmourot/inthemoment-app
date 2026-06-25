@@ -54,6 +54,7 @@ final class AppModel: ObservableObject {
 
     /// Engagement stats for the current creator's events, keyed by event id.
     @Published private(set) var statsByEvent: [UUID: EventStats] = [:]
+    @Published private(set) var notifications: [AppNotification] = []
 
     private let store: EventStore
     /// Swapped between the on-device file store (anonymous) and the API store
@@ -63,6 +64,7 @@ final class AppModel: ObservableObject {
     private let socialStore: SocialStore
     private let mediaUploadService: MediaUploadService
     private let reportService: ReportService
+    private let notificationService: NotificationService
 
     init(
         store: EventStore? = nil,
@@ -71,6 +73,7 @@ final class AppModel: ObservableObject {
         socialStore: SocialStore? = nil,
         mediaUploadService: MediaUploadService? = nil,
         reportService: ReportService? = nil,
+        notificationService: NotificationService? = nil,
         currentCreator: Creator? = nil
     ) {
         self.store = store ?? AppModel.makeDefaultStore()
@@ -79,6 +82,7 @@ final class AppModel: ObservableObject {
         self.socialStore = socialStore ?? AppModel.makeDefaultSocialStore()
         self.mediaUploadService = mediaUploadService ?? MediaUploadService()
         self.reportService = reportService ?? ReportService()
+        self.notificationService = notificationService ?? NotificationService()
         self.currentCreator = currentCreator
     }
 
@@ -142,6 +146,7 @@ final class AppModel: ObservableObject {
             loadError = error.localizedDescription
         }
         await loadCreatorStats()
+        await loadNotifications()
     }
 
     // MARK: Analytics
@@ -385,6 +390,7 @@ final class AppModel: ObservableObject {
         signedInEmail = nil
         signedInUserID = nil
         myEventsList = []
+        notifications = []
         fanStore = AppModel.makeDefaultFanStore()
         fanPrefs = (try? await fanStore.preferences()) ?? FanPreferences()
         await refresh()
@@ -504,6 +510,37 @@ final class AppModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
             return false
+        }
+    }
+
+    var unreadNotificationCount: Int {
+        notifications.filter { !$0.isRead }.count
+    }
+
+    func loadNotifications() async {
+        guard isAccountSignedIn else {
+            notifications = []
+            return
+        }
+        notifications = (try? await notificationService.notifications()) ?? []
+    }
+
+    func markNotificationRead(_ id: UUID) async {
+        if let updated = try? await notificationService.markRead(id: id) {
+            notifications = notifications.map { $0.id == id ? updated : $0 }
+        }
+    }
+
+    func markAllNotificationsRead() async {
+        do {
+            try await notificationService.markAllRead()
+            notifications = notifications.map { item in
+                var copy = item
+                copy.isRead = true
+                return copy
+            }
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
