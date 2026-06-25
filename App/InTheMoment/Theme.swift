@@ -29,6 +29,20 @@ enum AppTheme: String, CaseIterable, Identifiable {
     }
 }
 
+@MainActor
+final class AppSettings: ObservableObject {
+    @Published var theme: AppTheme {
+        didSet {
+            UserDefaults.standard.set(theme.rawValue, forKey: AppTheme.storageKey)
+        }
+    }
+
+    init() {
+        let raw = UserDefaults.standard.string(forKey: AppTheme.storageKey)
+        self.theme = raw.flatMap(AppTheme.init(rawValue:)) ?? .light
+    }
+}
+
 extension DateFormatter {
     static let eventDay: DateFormatter = {
         let f = DateFormatter()

@@ -431,19 +431,15 @@ private struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var auth: AuthService
-    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.light.rawValue
+    @EnvironmentObject private var settings: AppSettings
     @State private var showingLogoutConfirmation = false
 
     private var selectedTheme: Binding<AppTheme> {
         Binding {
-            AppTheme(rawValue: appThemeRaw) ?? .light
+            settings.theme
         } set: { newValue in
-            appThemeRaw = newValue.rawValue
+            settings.theme = newValue
         }
-    }
-
-    private var appTheme: AppTheme {
-        AppTheme(rawValue: appThemeRaw) ?? .light
     }
 
     var body: some View {
@@ -505,7 +501,7 @@ private struct SettingsView: View {
                 }
             }
         }
-        .preferredColorScheme(appTheme.colorScheme)
+        .preferredColorScheme(settings.theme.colorScheme)
         .confirmationDialog(
             "Sign out?",
             isPresented: $showingLogoutConfirmation,

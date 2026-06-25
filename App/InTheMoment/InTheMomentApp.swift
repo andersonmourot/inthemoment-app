@@ -4,18 +4,15 @@ import SwiftUI
 struct InTheMomentApp: App {
     @StateObject private var model = AppModel()
     @StateObject private var auth = AuthService()
-    @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.light.rawValue
+    @StateObject private var settings = AppSettings()
     @State private var didRestoreSession = false
-
-    private var appTheme: AppTheme {
-        AppTheme(rawValue: appThemeRaw) ?? .light
-    }
 
     var body: some Scene {
         WindowGroup {
             AuthGateView(didRestoreSession: didRestoreSession)
                 .environmentObject(model)
                 .environmentObject(auth)
+                .environmentObject(settings)
                 .task {
                     guard !didRestoreSession else { return }
                     let account = await auth.restore()
@@ -23,7 +20,7 @@ struct InTheMomentApp: App {
                     didRestoreSession = true
                 }
                 .tint(Color.appAccent)
-                .preferredColorScheme(appTheme.colorScheme)
+                .preferredColorScheme(settings.theme.colorScheme)
                 .onOpenURL { url in
                     Task { await model.handle(url: url) }
                 }
