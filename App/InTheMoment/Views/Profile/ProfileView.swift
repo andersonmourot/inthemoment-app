@@ -24,15 +24,11 @@ struct ProfileView: View {
                         CreatorHeader(
                             creator: creator,
                             avatarSelection: $avatarSelection,
-                            isUpdatingAvatar: isUpdatingAvatar
+                            isUpdatingAvatar: isUpdatingAvatar,
+                            editProfile: { showingEditProfile = true }
                         )
                         if isUpdatingAvatar {
                             ProgressView("Updating profile picture...")
-                        }
-                        Button {
-                            showingEditProfile = true
-                        } label: {
-                            Label("Edit Profile", systemImage: "pencil")
                         }
                     }
                     CreatorAnalyticsSection()
@@ -550,6 +546,7 @@ private struct CreatorHeader: View {
     let creator: Creator
     @Binding var avatarSelection: PhotosPickerItem?
     let isUpdatingAvatar: Bool
+    var editProfile: () -> Void
 
     var body: some View {
         HStack(spacing: 14) {
@@ -581,12 +578,21 @@ private struct CreatorHeader: View {
             .disabled(isUpdatingAvatar)
             .accessibilityLabel(creator.avatarURL == nil ? "Add Profile Picture" : "Change Profile Picture")
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(creator.displayName).font(.title3.bold())
-                Text(creator.displayHandle).foregroundStyle(Color.appAccent)
-                if let bio = creator.bio {
-                    Text(bio).font(.caption).foregroundStyle(.secondary)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(creator.displayName).font(.title3.bold())
+                    Text(creator.displayHandle).foregroundStyle(Color.appAccent)
+                    if let bio = creator.bio {
+                        Text(bio).font(.caption).foregroundStyle(.secondary)
+                    }
                 }
+                Spacer()
+                Button(action: editProfile) {
+                    Image(systemName: "pencil")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Edit Profile")
             }
         }
         .padding(.vertical, 4)

@@ -461,6 +461,16 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func deleteReport(id: UUID) async -> Bool {
+        do {
+            try await reportService.deleteReport(id: id)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     private func perform(_ action: @escaping () async throws -> Void) async {
         do {
             try await action()

@@ -23,6 +23,7 @@ struct ReportsView: View {
                 ForEach(reports) { report in
                     ReportRow(report: report)
                 }
+                .onDelete(perform: delete)
             }
         }
         .navigationTitle("Reports")
@@ -34,6 +35,19 @@ struct ReportsView: View {
         isLoading = true
         reports = await model.moderationReports()
         isLoading = false
+    }
+
+    private func delete(_ offsets: IndexSet) {
+        let ids = offsets.map { reports[$0].id }
+        reports.remove(atOffsets: offsets)
+        Task {
+            for id in ids {
+                if !(await model.deleteReport(id: id)) {
+                    await load()
+                    break
+                }
+            }
+        }
     }
 }
 
