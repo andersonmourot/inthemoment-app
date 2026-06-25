@@ -79,7 +79,7 @@ private struct FollowingEventRow: View {
                     } label: {
                         Image(systemName: model.isFavorite(event.id) ? "heart.fill" : "heart")
                             .font(.subheadline.weight(.bold))
-                            .foregroundStyle(model.isFavorite(event.id) ? .pink : .white)
+                            .foregroundStyle(model.isFavorite(event.id) ? Color.pink : Color.white)
                             .padding(8)
                             .background(.ultraThinMaterial, in: Circle())
                             .padding(8)

@@ -122,7 +122,7 @@ struct EventDetailView: View {
                 } label: {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
                 }
-                .tint(isFavorite ? .pink : model.accentColor)
+                .tint(isFavorite ? Color.pink : model.accentColor)
                 .accessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -192,7 +192,7 @@ struct EventDetailView: View {
                 .font(.subheadline.weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .tint(liked ? model.accentColor : .secondary)
+        .tint(liked ? model.accentColor : Color.secondary)
         .disabled(isTogglingLike || !model.isAccountSignedIn)
         .accessibilityLabel(liked ? "Unlike" : "Like")
     }
@@ -262,6 +262,6 @@ private struct FollowButton: View {
                 .font(.caption.weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .tint(following ? .secondary : model.accentColor)
+        .tint(following ? Color.secondary : model.accentColor)
     }
 }

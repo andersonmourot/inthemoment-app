@@ -64,7 +64,7 @@ struct AuthView: View {
                             }
                         Text(handleHelpText)
                             .font(.caption)
-                            .foregroundStyle(Creator.isValidHandle(normalizedHandle) ? .secondary : .orange)
+                            .foregroundStyle(Creator.isValidHandle(normalizedHandle) ? Color.secondary : Color.orange)
                     } header: {
                         Text("Your profile")
                     } footer: {
@@ -74,7 +74,7 @@ struct AuthView: View {
 
                 if let error = auth.errorMessage {
                     Section {
-                        Text(error).foregroundStyle(.red).font(.footnote)
+                        Text(error).foregroundStyle(Color.red).font(.footnote)
                     }
                 }
 

@@ -49,7 +49,7 @@ private struct NotificationRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: notification.kind.systemImage)
-                .foregroundStyle(notification.isRead ? .secondary : Color.appAccent)
+                .foregroundStyle(notification.isRead ? Color.secondary : Color.appAccent)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
