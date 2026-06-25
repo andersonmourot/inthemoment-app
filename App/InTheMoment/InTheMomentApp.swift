@@ -5,6 +5,7 @@ struct InTheMomentApp: App {
     @StateObject private var model = AppModel()
     @StateObject private var auth = AuthService()
     @AppStorage(AppTheme.storageKey) private var appThemeRaw = AppTheme.light.rawValue
+    @State private var didRestoreSession = false
 
     private var appTheme: AppTheme {
         AppTheme(rawValue: appThemeRaw) ?? .light
@@ -12,12 +13,14 @@ struct InTheMomentApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            AuthGateView(didRestoreSession: didRestoreSession)
                 .environmentObject(model)
                 .environmentObject(auth)
                 .task {
+                    guard !didRestoreSession else { return }
                     let account = await auth.restore()
                     await model.bootstrap(account: account)
+                    didRestoreSession = true
                 }
                 .tint(Color.appAccent)
                 .preferredColorScheme(appTheme.colorScheme)
@@ -34,6 +37,52 @@ struct InTheMomentApp: App {
                             }
                     }
                 }
+        }
+    }
+}
+
+private struct AuthGateView: View {
+    let didRestoreSession: Bool
+    @EnvironmentObject private var auth: AuthService
+
+    var body: some View {
+        Group {
+            if !didRestoreSession {
+                VStack(spacing: 14) {
+                    ProgressView()
+                    Text("Loading EncoreMoment...")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } else if auth.isAuthenticated {
+                RootTabView()
+            } else {
+                RequiredAuthView()
+            }
+        }
+    }
+}
+
+private struct RequiredAuthView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 54, weight: .semibold))
+                    .foregroundStyle(Color.appAccent)
+                    .padding(.top, 28)
+                VStack(spacing: 6) {
+                    Text("Welcome to EncoreMoment")
+                        .font(.title2.bold())
+                    Text("Create an account or sign in to browse events, save media, follow creators, and share your moments.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                AuthView(allowsCancel: false)
+                    .frame(minHeight: 500)
+            }
         }
     }
 }

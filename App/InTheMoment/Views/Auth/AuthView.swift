@@ -4,6 +4,7 @@ import InTheMomentCore
 /// Sign-in / sign-up form. Every account has a profile for posting events, while
 /// favorites/follows sync across devices once signed in.
 struct AuthView: View {
+    var allowsCancel = true
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var auth: AuthService
     @Environment(\.dismiss) private var dismiss
@@ -77,8 +78,10 @@ struct AuthView: View {
             .navigationTitle(mode == .login ? "Welcome back" : "Join EncoreMoment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                if allowsCancel {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
             }
         }

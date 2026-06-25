@@ -21,9 +21,10 @@ struct ReportsView: View {
                 .listRowSeparator(.hidden)
             } else {
                 ForEach(reports) { report in
-                    ReportRow(report: report)
+                    ReportRow(report: report) {
+                        delete(report)
+                    }
                 }
-                .onDelete(perform: delete)
             }
         }
         .navigationTitle("Reports")
@@ -37,15 +38,11 @@ struct ReportsView: View {
         isLoading = false
     }
 
-    private func delete(_ offsets: IndexSet) {
-        let ids = offsets.map { reports[$0].id }
-        reports.remove(atOffsets: offsets)
+    private func delete(_ report: Report) {
+        reports.removeAll { $0.id == report.id }
         Task {
-            for id in ids {
-                if !(await model.deleteReport(id: id)) {
-                    await load()
-                    break
-                }
+            if !(await model.deleteReport(id: report.id)) {
+                await load()
             }
         }
     }
@@ -53,6 +50,7 @@ struct ReportsView: View {
 
 private struct ReportRow: View {
     let report: Report
+    var onDelete: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -63,6 +61,12 @@ private struct ReportRow: View {
                 Text(report.createdAt, format: .dateTime.month().day().hour().minute())
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Delete report")
             }
 
             Text(report.reason.displayName)
