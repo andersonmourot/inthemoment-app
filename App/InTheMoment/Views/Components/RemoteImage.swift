@@ -9,7 +9,7 @@ struct RemoteImage: View {
     @ViewBuilder
     var body: some View {
         if let url, url.isFileURL {
-            if let localURL = MediaStorage.resolvedLocalFileURL(for: url),
+            if let localURL = MediaStorage.displayURL(for: url),
                let image = UIImage(contentsOfFile: localURL.path) {
                 Image(uiImage: image)
                     .resizable()
@@ -22,7 +22,7 @@ struct RemoteImage: View {
                     .clipped()
             }
         } else {
-            AsyncImage(url: url) { phase in
+            AsyncImage(url: MediaStorage.displayURL(for: url)) { phase in
                 switch phase {
                 case .success(let image):
                     image

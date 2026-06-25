@@ -109,7 +109,7 @@ private struct CreatorProfileEventRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            RemoteImage(url: event.displayCoverURL)
+            RemoteImage(url: MediaStorage.displayCoverURL(for: event))
                 .frame(width: 56, height: 56)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 

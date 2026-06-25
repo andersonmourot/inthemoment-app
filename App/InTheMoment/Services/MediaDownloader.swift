@@ -49,7 +49,7 @@ enum MediaDownloader {
         guard item.isDownloadable else { throw DownloadError.notDownloadable }
         try await requestAddPermission()
 
-        let assetURL = MediaStorage.resolvedLocalFileURL(for: item.url) ?? item.url
+        let assetURL = MediaStorage.playableURL(for: item.url)
         let data: Data
         if assetURL.isFileURL {
             data = try Data(contentsOf: assetURL)

@@ -184,7 +184,7 @@ struct CreatorEventDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            RemoteImage(url: liveEvent.displayCoverURL)
+            RemoteImage(url: MediaStorage.displayCoverURL(for: liveEvent))
                 .frame(height: 200)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 16))

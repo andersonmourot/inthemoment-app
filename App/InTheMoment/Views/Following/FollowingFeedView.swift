@@ -69,7 +69,7 @@ private struct FollowingEventRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            RemoteImage(url: event.displayCoverURL)
+            RemoteImage(url: MediaStorage.displayCoverURL(for: event))
                 .frame(height: 180)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 14))

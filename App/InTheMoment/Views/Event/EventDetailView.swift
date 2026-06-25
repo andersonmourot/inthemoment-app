@@ -25,7 +25,7 @@ struct EventDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                RemoteImage(url: liveEvent.displayCoverURL)
+                RemoteImage(url: MediaStorage.displayCoverURL(for: liveEvent))
                     .frame(height: 220)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 16))

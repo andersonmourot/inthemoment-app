@@ -32,12 +32,21 @@ enum UploadStorage {
            let url = URL(string: base)?.appendingPathComponent("uploads").appendingPathComponent(filename) {
             return url
         }
-        let proto = req.headers.first(name: "X-Forwarded-Proto") ?? "http"
-        guard let host = req.headers.first(name: "Host"),
-              let url = URL(string: "\(proto)://\(host)/uploads/\(filename)") else {
+        guard let host = req.headers.first(name: "Host") else {
+            throw Abort(.internalServerError, reason: "Could not build upload URL.")
+        }
+        let proto = req.headers.first(name: "X-Forwarded-Proto") ?? publicScheme(for: host)
+        guard let url = URL(string: "\(proto)://\(host)/uploads/\(filename)") else {
             throw Abort(.internalServerError, reason: "Could not build upload URL.")
         }
         return url
+    }
+
+    private static func publicScheme(for host: String) -> String {
+        if host.hasPrefix("localhost") || host.hasPrefix("127.0.0.1") || host.hasPrefix("0.0.0.0") {
+            return "http"
+        }
+        return "https"
     }
 
     private static func fileExtension(for filename: String, fallbackExtension: String) -> String {

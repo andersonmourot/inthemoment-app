@@ -94,6 +94,6 @@ struct MediaDetailView: View {
     }
 
     private func resolvedURL(_ url: URL) -> URL {
-        MediaStorage.resolvedLocalFileURL(for: url) ?? url
+        MediaStorage.playableURL(for: url)
     }
 }
