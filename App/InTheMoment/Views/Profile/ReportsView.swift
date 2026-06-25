@@ -51,6 +51,7 @@ struct ReportsView: View {
 private struct ReportRow: View {
     let report: Report
     var onDelete: () -> Void
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -71,7 +72,7 @@ private struct ReportRow: View {
 
             Text(report.reason.displayName)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color.appAccent)
+                .foregroundStyle(model.accentColor)
 
             if let details = report.details, !details.isEmpty {
                 Text(details)

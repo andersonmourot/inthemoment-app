@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import InTheMomentCore
 
 /// Observable view-model that bridges SwiftUI views to the ``EventStore``.
@@ -36,6 +37,14 @@ final class AppModel: ObservableObject {
 
     /// Whether any account is signed in.
     var isAccountSignedIn: Bool { signedInEmail != nil }
+
+    var accentColorHex: String {
+        AppAccentColor.normalized(currentCreator?.accentColorHex)
+    }
+
+    var accentColor: Color {
+        Color(hex: accentColorHex)
+    }
 
     /// Event to present when the app is opened via a deep link.
     @Published var deepLinkedEvent: Event?
@@ -280,6 +289,23 @@ final class AppModel: ObservableObject {
             return true
         } catch {
             errorMessage = "Couldn't update your profile. Please try again."
+            return false
+        }
+    }
+
+    func updateAccentColor(hex: String) async -> Bool {
+        guard var creator = currentCreator else { return false }
+        creator.accentColorHex = AppAccentColor.normalized(hex)
+        do {
+            try await store.upsertCreator(creator)
+            currentCreator = creator
+            creators = creators.map { $0.id == creator.id ? creator : $0 }
+            if !creators.contains(where: { $0.id == creator.id }) {
+                creators.append(creator)
+            }
+            return true
+        } catch {
+            errorMessage = "Couldn't update your theme color. Please try again."
             return false
         }
     }

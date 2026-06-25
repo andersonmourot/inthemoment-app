@@ -90,6 +90,7 @@ private struct ManageMediaRow: View {
     let isCover: Bool
     var setCover: () -> Void
     var remove: () -> Void
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -106,7 +107,7 @@ private struct ManageMediaRow: View {
                                 .font(.caption2.weight(.semibold))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color.appAccent.opacity(0.18), in: Capsule())
+                                .background(model.accentColor.opacity(0.18), in: Capsule())
                         }
                     }
                     .font(.caption)

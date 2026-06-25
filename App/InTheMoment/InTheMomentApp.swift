@@ -19,7 +19,7 @@ struct InTheMomentApp: App {
                     await model.bootstrap(account: account)
                     didRestoreSession = true
                 }
-                .tint(Color.appAccent)
+                .tint(model.accentColor)
                 .preferredColorScheme(settings.theme.colorScheme)
                 .onOpenURL { url in
                     Task { await model.handle(url: url) }
@@ -66,7 +66,7 @@ private struct RequiredAuthView: View {
             VStack(spacing: 18) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 54, weight: .semibold))
-                    .foregroundStyle(Color.appAccent)
+                .foregroundStyle(Color.appAccent)
                     .padding(.top, 28)
                 VStack(spacing: 6) {
                     Text("Welcome to EncoreMoment")

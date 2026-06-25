@@ -26,7 +26,7 @@ struct CreatorProfileView: View {
                         RemoteImage(url: liveCreator.avatarURL)
                             .frame(width: 72, height: 72)
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.appAccent, lineWidth: 2))
+                            .overlay(Circle().stroke(model.accentColor, lineWidth: 2))
 
                         VStack(alignment: .leading, spacing: 3) {
                             HStack(spacing: 6) {
@@ -34,11 +34,11 @@ struct CreatorProfileView: View {
                                     .font(.title3.bold())
                                 if liveCreator.isVerified {
                                     Image(systemName: "checkmark.seal.fill")
-                                        .foregroundStyle(Color.appAccent)
+                                        .foregroundStyle(model.accentColor)
                                 }
                             }
                             Text(liveCreator.displayHandle)
-                                .foregroundStyle(Color.appAccent)
+                                .foregroundStyle(model.accentColor)
                         }
                     }
 

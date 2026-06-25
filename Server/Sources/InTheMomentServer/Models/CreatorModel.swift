@@ -1,6 +1,7 @@
 import Fluent
 import Foundation
 import InTheMomentCore
+import SQLKit
 
 final class CreatorModel: Model, @unchecked Sendable {
     static let schema = "creators"
@@ -10,6 +11,7 @@ final class CreatorModel: Model, @unchecked Sendable {
     @Field(key: "handle") var handle: String
     @OptionalField(key: "bio") var bio: String?
     @OptionalField(key: "avatar_url") var avatarURL: String?
+    @OptionalField(key: "accent_color_hex") var accentColorHex: String?
     @Field(key: "is_verified") var isVerified: Bool
     @Field(key: "joined_at") var joinedAt: Date
 
@@ -21,6 +23,7 @@ final class CreatorModel: Model, @unchecked Sendable {
         self.handle = creator.handle
         self.bio = creator.bio
         self.avatarURL = creator.avatarURL?.absoluteString
+        self.accentColorHex = creator.accentColorHex
         self.isVerified = creator.isVerified
         self.joinedAt = creator.joinedAt
     }
@@ -30,6 +33,7 @@ final class CreatorModel: Model, @unchecked Sendable {
         self.handle = creator.handle
         self.bio = creator.bio
         self.avatarURL = creator.avatarURL?.absoluteString
+        self.accentColorHex = creator.accentColorHex
         self.isVerified = creator.isVerified
         self.joinedAt = creator.joinedAt
     }
@@ -41,9 +45,24 @@ final class CreatorModel: Model, @unchecked Sendable {
             handle: handle,
             bio: bio,
             avatarURL: avatarURL.flatMap(URL.init(string:)),
+            accentColorHex: accentColorHex,
             isVerified: isVerified,
             joinedAt: joinedAt
         )
+    }
+}
+
+struct AddCreatorAccentColor: AsyncMigration {
+    func prepare(on database: Database) async throws {
+        guard let sql = database as? any SQLDatabase else { return }
+        try await sql.raw("""
+        ALTER TABLE \(unsafeRaw: CreatorModel.schema)
+        ADD COLUMN accent_color_hex TEXT
+        """).run()
+    }
+
+    func revert(on database: Database) async throws {
+        // SQLite cannot drop columns on older versions; keep the additive column.
     }
 }
 

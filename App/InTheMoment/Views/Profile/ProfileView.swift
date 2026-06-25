@@ -433,6 +433,7 @@ private struct SettingsView: View {
     @EnvironmentObject private var auth: AuthService
     @EnvironmentObject private var settings: AppSettings
     @State private var showingLogoutConfirmation = false
+    @State private var selectedAccentHex = AppAccentColor.encorePurple.rawValue
 
     private var selectedTheme: Binding<AppTheme> {
         Binding {
@@ -452,10 +453,27 @@ private struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+
+                    if model.currentCreator != nil {
+                        Picker("Accent Color", selection: $selectedAccentHex) {
+                            ForEach(AppAccentColor.allCases) { accent in
+                                HStack {
+                                    Circle()
+                                        .fill(accent.color)
+                                        .frame(width: 14, height: 14)
+                                    Text(accent.displayName)
+                                }
+                                .tag(accent.rawValue)
+                            }
+                        }
+                        .onChange(of: selectedAccentHex) { hex in
+                            Task { await model.updateAccentColor(hex: hex) }
+                        }
+                    }
                 } header: {
                     Text("Appearance")
                 } footer: {
-                    Text("Choose Light or Dark mode for this app.")
+                    Text("Choose Light or Dark mode and personalize your account's accent color.")
                 }
 
                 Section {
@@ -514,6 +532,9 @@ private struct SettingsView: View {
         } message: {
             Text("You can sign back in at any time.")
         }
+        .onAppear {
+            selectedAccentHex = model.accentColorHex
+        }
     }
 
     private var appVersion: String {
@@ -543,6 +564,7 @@ private struct CreatorHeader: View {
     @Binding var avatarSelection: PhotosPickerItem?
     let isUpdatingAvatar: Bool
     var editProfile: () -> Void
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
         HStack(spacing: 14) {
@@ -551,10 +573,10 @@ private struct CreatorHeader: View {
                     RemoteImage(url: creator.avatarURL)
                         .frame(width: 60, height: 60)
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.appAccent, lineWidth: 2))
+                        .overlay(Circle().stroke(model.accentColor, lineWidth: 2))
 
                     ZStack {
-                        Circle().fill(Color.appAccent)
+                        Circle().fill(model.accentColor)
                         if isUpdatingAvatar {
                             ProgressView()
                                 .controlSize(.mini)
@@ -577,7 +599,7 @@ private struct CreatorHeader: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(creator.displayName).font(.title3.bold())
-                    Text(creator.displayHandle).foregroundStyle(Color.appAccent)
+                    Text(creator.displayHandle).foregroundStyle(model.accentColor)
                     if let bio = creator.bio {
                         Text(bio).font(.caption).foregroundStyle(.secondary)
                     }

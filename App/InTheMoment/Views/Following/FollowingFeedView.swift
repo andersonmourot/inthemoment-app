@@ -97,7 +97,7 @@ private struct FollowingEventRow: View {
                     if let creator {
                         Text(creator.displayName)
                         if creator.isVerified {
-                            Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
+                            Image(systemName: "checkmark.seal.fill").foregroundStyle(model.accentColor)
                         }
                         Text("-")
                     }

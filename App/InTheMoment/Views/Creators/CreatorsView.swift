@@ -44,6 +44,7 @@ struct CreatorsView: View {
 
 private struct CreatorSearchRow: View {
     let creator: Creator
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
         HStack(spacing: 12) {
@@ -55,12 +56,12 @@ private struct CreatorSearchRow: View {
                 HStack(spacing: 6) {
                     Text(creator.displayName).font(.headline)
                     if creator.isVerified {
-                        Image(systemName: "checkmark.seal.fill").foregroundStyle(Color.appAccent)
+                        Image(systemName: "checkmark.seal.fill").foregroundStyle(model.accentColor)
                     }
                 }
                 Text(creator.displayHandle)
                     .font(.caption)
-                    .foregroundStyle(Color.appAccent)
+                    .foregroundStyle(model.accentColor)
                 if let bio = creator.bio, !bio.isEmpty {
                     Text(bio)
                         .font(.caption)

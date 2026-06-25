@@ -9,6 +9,8 @@ public struct Creator: Identifiable, Codable, Hashable, Sendable {
     public var handle: String
     public var bio: String?
     public var avatarURL: URL?
+    /// Hex color used to personalize this creator/account's app accents.
+    public var accentColorHex: String?
     public var isVerified: Bool
     public let joinedAt: Date
 
@@ -18,6 +20,7 @@ public struct Creator: Identifiable, Codable, Hashable, Sendable {
         handle: String,
         bio: String? = nil,
         avatarURL: URL? = nil,
+        accentColorHex: String? = nil,
         isVerified: Bool = false,
         joinedAt: Date = Date()
     ) {
@@ -26,6 +29,7 @@ public struct Creator: Identifiable, Codable, Hashable, Sendable {
         self.handle = handle
         self.bio = bio
         self.avatarURL = avatarURL
+        self.accentColorHex = accentColorHex
         self.isVerified = isVerified
         self.joinedAt = joinedAt
     }

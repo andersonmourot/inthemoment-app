@@ -37,7 +37,7 @@ struct EventDetailView: View {
                             NavigationLink {
                                 CreatorProfileView(creator: creator)
                             } label: {
-                                Text(creator.displayHandle).foregroundStyle(Color.appAccent)
+                                Text(creator.displayHandle).foregroundStyle(model.accentColor)
                             }
                             Spacer()
                             FollowButton(creator: creator)
@@ -122,7 +122,7 @@ struct EventDetailView: View {
                 } label: {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
                 }
-                .tint(isFavorite ? .pink : Color.appAccent)
+                .tint(isFavorite ? .pink : model.accentColor)
                 .accessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -192,7 +192,7 @@ struct EventDetailView: View {
                 .font(.subheadline.weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .tint(liked ? Color.appAccent : .secondary)
+        .tint(liked ? model.accentColor : .secondary)
         .disabled(isTogglingLike || !model.isAccountSignedIn)
         .accessibilityLabel(liked ? "Unlike" : "Like")
     }
@@ -262,6 +262,6 @@ private struct FollowButton: View {
                 .font(.caption.weight(.semibold))
         }
         .buttonStyle(.bordered)
-        .tint(following ? .secondary : Color.appAccent)
+        .tint(following ? .secondary : model.accentColor)
     }
 }

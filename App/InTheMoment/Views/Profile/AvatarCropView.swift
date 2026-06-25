@@ -6,6 +6,7 @@ struct AvatarCropView: View {
     var onSave: (Data) async -> Bool
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var model: AppModel
     @State private var scale: CGFloat = 1
     @State private var lastScale: CGFloat = 1
     @State private var offset: CGSize = .zero
@@ -77,7 +78,7 @@ struct AvatarCropView: View {
             .offset(offset)
             .frame(width: size, height: size)
             .clipShape(Circle())
-            .overlay(Circle().stroke(Color.appAccent, lineWidth: 3))
+            .overlay(Circle().stroke(model.accentColor, lineWidth: 3))
             .shadow(radius: 12)
             .gesture(dragGesture)
             .simultaneousGesture(magnificationGesture)
